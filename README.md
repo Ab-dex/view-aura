@@ -1,70 +1,224 @@
-# Getting Started with Create React App
+# 🎬 ViewAura
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+**A distributed, event-driven media intelligence platform combining streaming, social interaction, and AI-powered discovery.**
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## 🚀 Overview
 
-### `npm start`
+ViewAura is a **polyglot, cloud-native media platform** designed for:
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+* Movie discovery at scale
+* Real-time social interaction
+* AI-powered recommendations
+* High-performance search (Netflix-level)
+* Studio-grade upload + processing pipelines
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+It combines:
 
-### `npm test`
+* Microservices architecture
+* Domain-Driven Design (DDD)
+* Event-driven systems (Kafka)
+* Edge computing (Cloudflare Workers)
+* ML pipelines (Python + GPU inference)
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+---
 
-### `npm run build`
+## 🧠 Core Capabilities
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+* 🎥 Movie catalog + metadata enrichment
+* ⭐ Ratings + reviews + social graph
+* 🔍 Sub-millisecond full-text search
+* 🤖 AI recommendations (512-dim taste vectors)
+* 📡 Real-time watch parties (WebSockets)
+* 📤 Studio upload + video processing pipeline
+* 🔔 Multi-channel notifications (push/email/SMS)
+* 📊 Real-time analytics (ClickHouse + Flink)
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+---
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 🏗️ Architecture
 
-### `npm run eject`
+ViewAura is built using a **domain-first, event-driven microservices architecture**.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Layers
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+* **Edge Layer**
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+  * Cloudflare Workers (A/B testing, caching, bot detection)
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+* **API Layer**
 
-## Learn More
+  * Go API Gateway (Kong-backed)
+  * GraphQL BFF (Apollo Federation)
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+* **Core Services (Go)**
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+  * User, Movie, Rating, Review, Watchlist, Social
 
-### Code Splitting
+* **Performance Services (Rust)**
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+  * Search (MeiliSearch/OpenSearch)
+  * Watch Party (WebSockets)
+  * Video Packaging (FFmpeg pipeline)
 
-### Analyzing the Bundle Size
+* **AI/ML Services (Python)**
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+  * Recommendation Engine
+  * Content Moderation
+  * Scene Understanding
+  * Script Analysis
 
-### Making a Progressive Web App
+* **Event System**
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+  * Apache Kafka (primary event backbone)
 
-### Advanced Configuration
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## 📁 Repository Structure
 
-### Deployment
+```bash
+ViewAura/
+│
+├── apps/                 # API gateway + BFF + admin
+├── services/            # Microservices (domain-owned)
+├── internal/            # Shared domain logic (DDD core)
+├── edge/                # Cloudflare Workers
+├── libs/                # SDKs (Go / TS / Python)
+├── workflows/           # Temporal workflows
+├── infrastructure/      # Kubernetes + infra config
+├── deployments/         # Docker + Helm + Terraform
+├── tools/               # Dev + testing utilities
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+---
 
-### `npm run build` fails to minify
+## ⚙️ Tech Stack
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### Backend
+
+* Go — Core microservices
+* Rust — Search, real-time systems
+* Python — AI/ML pipelines
+* Node.js — BFF + edge services
+
+### Infrastructure
+
+* Kubernetes
+* Kafka
+* PostgreSQL + Citus
+* Redis
+* ClickHouse
+* Cloudflare
+
+### Search
+
+* MeiliSearch / OpenSearch
+
+---
+
+## 🔄 Key Data Flow
+
+### Example: Movie Rating Event
+
+1. User submits rating
+2. Rating Service writes to Postgres
+3. Event published to Kafka
+4. Consumers update:
+
+   * Recommendation engine
+   * Social feed
+   * Search index
+   * Analytics (ClickHouse)
+
+---
+
+## ⚡ Performance Goals
+
+* ⏱ Movie page load: **< 50ms p95**
+* 🔍 Search latency: **~1ms p99**
+* 📡 Watch party sync: **< 100ms**
+* 🚀 System throughput: **100K+ RPS**
+* 🌍 Uptime target: **99.99%**
+
+---
+
+## 🧪 Development
+
+### Setup
+
+```bash
+go work init
+go work use ./internal ./services ./apps
+```
+
+### Run API Gateway
+
+```bash
+go run apps/api-gateway
+```
+
+### Run Search Service
+
+```bash
+cd services/search-service
+cargo run
+```
+
+---
+
+## 📡 Event-Driven Design
+
+ViewAura uses Kafka as its backbone:
+
+* `movie.created`
+* `rating.updated`
+* `review.published`
+* `watch.event`
+* `notification.dispatch`
+
+All services are **decoupled via events**, never direct DB access.
+
+---
+
+## 🔐 Security
+
+* JWT + OAuth2 authentication
+* mTLS via service mesh
+* WAF at edge layer
+* Encrypted PII at rest
+* Signed uploads (R2)
+* DRM for video content
+
+---
+
+## 🧭 Design Principles
+
+* Domain-first architecture
+* Event-driven communication
+* Database-per-service
+* Edge-first optimization
+* Async-first AI workloads
+* Zero trust networking
+
+---
+
+## 📌 Status
+
+🚧 Early-stage platform architecture
+🧱 Core system being built
+⚙️ Active development
+
+---
+
+## 📜 License
+
+Private / Proprietary (for now)
+
+---
+
+## 🧠 Vision
+
+ViewAura aims to become:
+
+> A unified intelligence layer for global film discovery, streaming, and social interaction — combining IMDb, Netflix, and Letterboxd into one system.
