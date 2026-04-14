@@ -33,17 +33,23 @@ func (h *UserHandler) RegisterRoutes(r gin.IRouter) {
 }
 
 func (h *UserHandler) RegisterProtectedRoutes(r gin.IRouter) {
+	// Auth & Session Management
 	r.POST("/logout", h.Logout)
 	r.POST("/logout/all", h.LogoutAll)
+	r.GET("/me/sessions", h.ListSessions)
+	r.DELETE("/me/sessions/:session_id", h.RevokeSession)
+
+	// Account Management (The "User" entity)
+	// Rename /me/profile to /me/account to distinguish from Household Profiles
 	r.GET("/me", h.GetMe)
-	r.GET("/me/profile", h.GetProfile)
-	r.PATCH("/me/profile", h.UpdateProfile)
+	r.GET("/me/account", h.GetAccountDetails)
+	r.PATCH("/me/account", h.UpdateAccountDetails)
+
+	// Global Account Settings
 	r.GET("/me/preferences", h.GetPreferences)
 	r.PATCH("/me/preferences", h.UpdatePreferences)
 	r.PUT("/me/password", h.ChangePassword)
 	r.DELETE("/me", h.DeleteAccount)
-	r.GET("/me/sessions", h.ListSessions)
-	r.DELETE("/me/sessions/:session_id", h.RevokeSession)
 }
 
 // ─── Request / Response DTOs ──────────────────────────────────────────────────
@@ -239,7 +245,7 @@ func (h *UserHandler) Logout(c *gin.Context) {
 }
 
 func (h *UserHandler) LogoutAll(c *gin.Context) {
-	userID := mustUserID(c)
+	userID := MustUserID(c)
 	if err := h.svc.LogoutAll(c.Request.Context(), userID); err != nil {
 		respondError(c, err)
 		return
@@ -248,7 +254,7 @@ func (h *UserHandler) LogoutAll(c *gin.Context) {
 }
 
 func (h *UserHandler) GetMe(c *gin.Context) {
-	userID := mustUserID(c)
+	userID := MustUserID(c)
 	user, err := h.svc.GetByID(c.Request.Context(), userID)
 	if err != nil {
 		respondError(c, err)
@@ -257,9 +263,9 @@ func (h *UserHandler) GetMe(c *gin.Context) {
 	c.JSON(http.StatusOK, toUserResponse(user))
 }
 
-func (h *UserHandler) GetProfile(c *gin.Context) {
-	userID := mustUserID(c)
-	profile, err := h.svc.GetProfile(c.Request.Context(), userID)
+func (h *UserHandler) GetAccountDetails(c *gin.Context) {
+	userID := MustUserID(c)
+	profile, err := h.svc.GetAccountDetails(c.Request.Context(), userID)
 	if err != nil {
 		respondError(c, err)
 		return
@@ -267,14 +273,14 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, toProfileResponse(profile))
 }
 
-func (h *UserHandler) UpdateProfile(c *gin.Context) {
+func (h *UserHandler) UpdateAccountDetails(c *gin.Context) {
 	var req updateProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, apierror.Validation(err.Error(), nil))
 		return
 	}
 
-	userID := mustUserID(c)
+	userID := MustUserID(c)
 	cmd := domain.UpdateProfileCmd{
 		UserID:     userID,
 		AvatarURL:  req.AvatarURL,
@@ -293,7 +299,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		cmd.Birthdate = &t
 	}
 
-	profile, err := h.svc.UpdateProfile(c.Request.Context(), cmd)
+	profile, err := h.svc.UpdateAccountDetails(c.Request.Context(), cmd)
 	if err != nil {
 		respondError(c, err)
 		return
@@ -302,7 +308,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 }
 
 func (h *UserHandler) GetPreferences(c *gin.Context) {
-	userID := mustUserID(c)
+	userID := MustUserID(c)
 	prefs, err := h.svc.GetPreferences(c.Request.Context(), userID)
 	if err != nil {
 		respondError(c, err)
@@ -318,7 +324,7 @@ func (h *UserHandler) UpdatePreferences(c *gin.Context) {
 		return
 	}
 
-	userID := mustUserID(c)
+	userID := MustUserID(c)
 	prefs, err := h.svc.UpdatePreferences(c.Request.Context(), domain.UpdatePreferencesCmd{
 		UserID:             userID,
 		PreferredGenres:    req.PreferredGenres,
@@ -342,7 +348,7 @@ func (h *UserHandler) ChangePassword(c *gin.Context) {
 		return
 	}
 
-	userID := mustUserID(c)
+	userID := MustUserID(c)
 	if err := h.svc.ChangePassword(c.Request.Context(), userID, req.OldPassword, req.NewPassword); err != nil {
 		respondError(c, err)
 		return
@@ -351,7 +357,7 @@ func (h *UserHandler) ChangePassword(c *gin.Context) {
 }
 
 func (h *UserHandler) DeleteAccount(c *gin.Context) {
-	userID := mustUserID(c)
+	userID := MustUserID(c)
 	if err := h.svc.SoftDelete(c.Request.Context(), userID); err != nil {
 		respondError(c, err)
 		return
@@ -360,7 +366,7 @@ func (h *UserHandler) DeleteAccount(c *gin.Context) {
 }
 
 func (h *UserHandler) ListSessions(c *gin.Context) {
-	userID := mustUserID(c)
+	userID := MustUserID(c)
 	sessions, err := h.svc.ListSessions(c.Request.Context(), userID)
 	if err != nil {
 		respondError(c, err)
@@ -389,7 +395,7 @@ func (h *UserHandler) ListSessions(c *gin.Context) {
 }
 
 func (h *UserHandler) RevokeSession(c *gin.Context) {
-	userID := mustUserID(c)
+	userID := MustUserID(c)
 	sessionID := c.Param("session_id")
 
 	if err := h.svc.RevokeSession(c.Request.Context(), userID, sessionID); err != nil {
@@ -401,9 +407,9 @@ func (h *UserHandler) RevokeSession(c *gin.Context) {
 
 // ─── Middleware helpers ────────────────────────────────────────────────────────
 
-// mustUserID extracts the authenticated user ID from the Gin context.
+// MustUserID extracts the authenticated user ID from the Gin context.
 // It panics if the auth middleware was not applied (programming error).
-func mustUserID(c *gin.Context) domain.UserID {
+func MustUserID(c *gin.Context) domain.UserID {
 	v, exists := c.Get("user_id")
 	if !exists {
 		panic("auth middleware not applied — user_id not in context")

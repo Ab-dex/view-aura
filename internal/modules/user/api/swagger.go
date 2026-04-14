@@ -67,7 +67,7 @@ func (h *UserHandler) swaggerLogout() {}
 //	@Router      /users/logout/all [post]
 func (h *UserHandler) swaggerLogoutAll() {}
 
-// ─── Profile ──────────────────────────────────────────────────────────────────
+// ─── Account Details ───────────────────────────────────────────────────────────────
 
 // GetMe godoc
 //
@@ -81,33 +81,33 @@ func (h *UserHandler) swaggerLogoutAll() {}
 //	@Router      /users/me [get]
 func (h *UserHandler) swaggerGetMe() {}
 
-// GetProfile godoc
+// GetAccountDetails godoc
 //
-//	@Summary     Get profile
-//	@Description Returns the authenticated user's public profile (avatar, bio, etc.).
+//	@Summary     Get Account Details
+//	@Description Returns the authenticated user's public account details (avatar, bio, etc.).
 //	@Tags        Users
 //	@Security    BearerAuth
 //	@Produce     json
 //	@Success     200 {object} profileResponse
 //	@Failure     401 {object} errorResponse
-//	@Router      /users/me/profile [get]
-func (h *UserHandler) swaggerGetProfile() {}
+//	@Router      /users/me/account [get]
+func (h *UserHandler) swaggerGetAccountDetails() {}
 
-// UpdateProfile godoc
+// UpdateAccountDetails godoc
 //
-//	@Summary     Update profile
-//	@Description Applies partial updates to the authenticated user's profile.
+//	@Summary     Update account details
+//	@Description Applies partial updates to the authenticated user's account details.
 //	             All fields are optional — only provided fields are changed.
 //	@Tags        Users
 //	@Security    BearerAuth
 //	@Accept      json
 //	@Produce     json
-//	@Param       body body updateProfileRequest true "Profile fields to update"
+//	@Param       body body updateProfileRequest true "Account fields to update"
 //	@Success     200 {object} profileResponse
 //	@Failure     400 {object} errorResponse
 //	@Failure     401 {object} errorResponse
-//	@Router      /users/me/profile [patch]
-func (h *UserHandler) swaggerUpdateProfile() {}
+//	@Router      /users/me/account [patch]
+func (h *UserHandler) swaggerUpdateAccountDetails() {}
 
 // GetPreferences godoc
 //

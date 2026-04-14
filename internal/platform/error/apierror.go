@@ -28,10 +28,12 @@ const (
 
 	// domain-specific
 	CodeUserNotFound          Code = "USER_NOT_FOUND"
+	CodeProfileNotFound       Code = "PROFILE_NOT_FOUND"
 	CodeEmailAlreadyExists    Code = "EMAIL_ALREADY_EXISTS"
 	CodeUsernameAlreadyExists Code = "USERNAME_ALREADY_EXISTS"
 	CodeInvalidCredentials    Code = "INVALID_CREDENTIALS"
 	CodeAccountLocked         Code = "ACCOUNT_LOCKED"
+	CodeNotAllowed            Code = "NOT_ALLOWED"
 	CodeAccountSuspended      Code = "ACCOUNT_SUSPENDED"
 	CodeEmailNotVerified      Code = "EMAIL_NOT_VERIFIED"
 	CodeSessionNotFound       Code = "SESSION_NOT_FOUND"
@@ -135,12 +137,14 @@ func DatabaseError(cause error) *APIError {
 
 var (
 	ErrUserNotFound          = New(http.StatusNotFound, CodeUserNotFound, "user not found")
+	ErrProfileNotFound       = New(http.StatusNotFound, CodeProfileNotFound, "profile not found")
 	ErrEmailAlreadyExists    = New(http.StatusConflict, CodeEmailAlreadyExists, "email address is already registered")
 	ErrUsernameAlreadyExists = New(http.StatusConflict, CodeUsernameAlreadyExists, "username is already taken")
 	ErrInvalidCredentials    = New(http.StatusUnauthorized, CodeInvalidCredentials, "invalid email or password")
 	ErrAccountLocked         = New(http.StatusForbidden, CodeAccountLocked, "account is temporarily locked due to too many failed login attempts")
 	ErrAccountSuspended      = New(http.StatusForbidden, CodeAccountSuspended, "account has been suspended")
 	ErrEmailNotVerified      = New(http.StatusForbidden, CodeEmailNotVerified, "email address has not been verified")
+	ErrNotAllowed            = New(http.StatusForbidden, CodeNotAllowed, "access not allowed")
 	ErrSessionNotFound       = New(http.StatusUnauthorized, CodeSessionNotFound, "session not found")
 	ErrSessionExpired        = New(http.StatusUnauthorized, CodeSessionExpired, "session has expired")
 	ErrSessionRevoked        = New(http.StatusUnauthorized, CodeSessionRevoked, "session has been revoked")

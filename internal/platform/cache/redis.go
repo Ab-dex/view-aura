@@ -53,12 +53,3 @@ func (c *Client) Close() {
 	}
 	log.Info().Msg("redis: connection closed")
 }
-
-// Centralising key construction prevents typos and makes TTL audits easy.
-
-func SessionKey(token string) string        { return "session:" + token }
-func UserSessionsKey(userID string) string  { return "user:" + userID + ":sessions" }
-func BlocklistJTIKey(jti string) string     { return "blocklist:jti:" + jti }
-func UserEmbeddingKey(userID string) string { return "user:" + userID + ":embedding" }
-func RateLimitKey(ip, route string) string  { return "rate_limit:" + ip + ":" + route }
-func NotifRateKey(userID string) string     { return "notif:rate:" + userID }

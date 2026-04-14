@@ -164,7 +164,7 @@ func TestRegister_BootstrapsProfileAndPrefs(t *testing.T) {
 	user, _, err := svc.Register(context.Background(), validRegister())
 	require.NoError(t, err)
 
-	profile, err := svc.GetProfile(context.Background(), user.ID)
+	profile, err := svc.GetAccountDetails(context.Background(), user.ID)
 	require.NoError(t, err)
 	assert.Equal(t, domain.VisibilityPublic, profile.Visibility)
 
@@ -333,7 +333,7 @@ func TestUpdateProfile_PartialUpdate(t *testing.T) {
 	user, _, _ := svc.Register(context.Background(), validRegister())
 
 	bio := "Film critic based in Lagos"
-	profile, err := svc.UpdateProfile(context.Background(), domain.UpdateProfileCmd{
+	profile, err := svc.UpdateAccountDetails(context.Background(), domain.UpdateProfileCmd{
 		UserID: user.ID,
 		Bio:    &bio,
 	})

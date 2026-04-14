@@ -21,6 +21,7 @@ type Config struct {
 	Kafka        KafkaConfig        `mapstructure:"kafka"`
 	Tracing      TracingConfig      `mapstructure:"tracing"`
 	ModerationAI ModerationAIConfig `mapstructure:"moderation_ai"`
+	Gateway      GatewayConfig      `mapstructure:"gateway"`
 }
 
 // ─── Existing config types (unchanged) ───────────────────────────────────────
@@ -105,7 +106,6 @@ type TemporalConfig struct {
 }
 
 // KafkaConfig holds Apache Kafka broker and producer/consumer settings.
-
 type KafkaConfig struct {
 	Brokers          string `mapstructure:"brokers"`
 	GroupID          string `mapstructure:"group_id"`
@@ -116,12 +116,6 @@ type KafkaConfig struct {
 }
 
 // TracingConfig holds OpenTelemetry exporter settings.
-// Add this field to the root Config struct:
-//
-//	type Config struct {
-//	    ...existing fields...
-//	    Tracing TracingConfig `mapstructure:"tracing"`
-//	}
 //
 // config.yaml example:
 //
@@ -132,13 +126,11 @@ type KafkaConfig struct {
 //	  environment:     "production"
 //	  sample_rate:     0.1                      # 10% of successful requests
 type TracingConfig struct {
-	// Endpoint is the OTLP gRPC address of the collector (e.g. Jaeger all-in-one,
-	// Grafana Agent, or OpenTelemetry Collector).
+	// Endpoint is the OTLP gRPC address of the collector.
 	// Leave empty to disable tracing (no-op provider used).
 	Endpoint string `mapstructure:"endpoint"`
 
 	// ServiceName is the logical name of this service in traces.
-	// Should match the Kubernetes service name for correlation with k8s metrics.
 	ServiceName string `mapstructure:"service_name"`
 
 	// ServiceVersion is embedded in every span for deployment correlation.
@@ -153,14 +145,59 @@ type TracingConfig struct {
 	SampleRate float64 `mapstructure:"sample_rate"`
 }
 
+// ModerationAIConfig configures the Python moderation-ai service client.
 type ModerationAIConfig struct {
 	// Endpoint is the base URL of the Python moderation-ai service.
 	// Leave empty to use the NoopAIClient (always approves — for local dev).
 	Endpoint string `mapstructure:"endpoint"`
 }
 
-// setTracingDefaults fills zero-value TracingConfig fields.
-// Call from the existing setDefaults function in config.go.
+// GatewayConfig configures the lightweight Go API gateway used in local
+// development and integration tests. In production this role is fulfilled
+// by Kong; these settings are ignored when Kong is the entry point.
+//
+// config.yaml example:
+//
+//	gateway:
+//	  addr:           ":8000"
+//	  upstream_url:   "http://cinemaos-api:8080"
+//	  allowed_origins:
+//	    - "https://cinemaos.com"
+//	    - "https://www.cinemaos.com"
+//	  rate_limit_rpm: 1000
+//	  skip_auth_paths:
+//	    - "/api/v1/users/register"
+//	    - "/api/v1/users/login"
+//	    - "/api/v1/users/refresh"
+//	    - "/api/v1/movies"
+//	    - "/api/v1/movies/genres"
+//	    - "/api/v1/webhook/stripe"
+type GatewayConfig struct {
+	// Addr is the listen address for the gateway server.
+	// Defaults to ":8000".
+	Addr string `mapstructure:"addr"`
+
+	// UpstreamURL is the base URL of the monolith API service the gateway
+	// proxies to. Defaults to "http://cinemaos-api:8080".
+	UpstreamURL string `mapstructure:"upstream_url"`
+
+	// AllowedOrigins is the list of exact CORS origins the gateway permits.
+	// The wildcard "*" is intentionally not supported to prevent
+	// credential-bearing cross-site requests.
+	AllowedOrigins []string `mapstructure:"allowed_origins"`
+
+	// RateLimitRPM is the sliding-window rate limit applied per client IP,
+	// expressed as requests per minute. Defaults to 100 for unauthenticated
+	// and 1000 for authenticated callers.
+	RateLimitRPM int `mapstructure:"rate_limit_rpm"`
+
+	// SkipAuthPaths is the list of URL path prefixes that bypass JWT
+	// validation. Stripe webhooks and public read endpoints belong here.
+	SkipAuthPaths []string `mapstructure:"skip_auth_paths"`
+}
+
+// ─── Defaults and helpers ─────────────────────────────────────────────────────
+
 func setTracingDefaults(cfg *Config) {
 	if cfg.Tracing.ServiceName == "" {
 		cfg.Tracing.ServiceName = cfg.App.Name
@@ -170,6 +207,34 @@ func setTracingDefaults(cfg *Config) {
 	}
 	if cfg.Tracing.SampleRate == 0 {
 		cfg.Tracing.SampleRate = 0.1
+	}
+}
+
+func setGatewayDefaults(cfg *Config) {
+	if cfg.Gateway.Addr == "" {
+		cfg.Gateway.Addr = ":8000"
+	}
+	if cfg.Gateway.UpstreamURL == "" {
+		cfg.Gateway.UpstreamURL = "http://cinemaos-api:8080"
+	}
+	if cfg.Gateway.RateLimitRPM == 0 {
+		cfg.Gateway.RateLimitRPM = 100
+	}
+	if len(cfg.Gateway.AllowedOrigins) == 0 {
+		cfg.Gateway.AllowedOrigins = []string{
+			"http://localhost:3000",
+			"http://localhost:5173",
+		}
+	}
+	if len(cfg.Gateway.SkipAuthPaths) == 0 {
+		cfg.Gateway.SkipAuthPaths = []string{
+			"/api/v1/users/register",
+			"/api/v1/users/login",
+			"/api/v1/users/refresh",
+			"/api/v1/movies",
+			"/api/v1/movies/genres",
+			"/api/v1/webhook/stripe",
+		}
 	}
 }
 
@@ -262,6 +327,9 @@ func setDefaults(cfg *Config) {
 	if cfg.Kafka.GroupID == "" {
 		cfg.Kafka.GroupID = "viewaura-worker"
 	}
+
+	setTracingDefaults(cfg)
+	setGatewayDefaults(cfg)
 }
 
 func validate(cfg *Config) error {

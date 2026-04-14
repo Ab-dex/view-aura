@@ -25,8 +25,8 @@ type UserService interface {
 	Logout(ctx context.Context, accessJTI string, sessionID string, remainingTTL time.Duration) error
 	LogoutAll(ctx context.Context, userID domain.UserID) error
 	GetByID(ctx context.Context, id domain.UserID) (*domain.User, error)
-	GetProfile(ctx context.Context, userID domain.UserID) (*domain.UserProfile, error)
-	UpdateProfile(ctx context.Context, cmd domain.UpdateProfileCmd) (*domain.UserProfile, error)
+	GetAccountDetails(ctx context.Context, userID domain.UserID) (*domain.UserProfile, error)
+	UpdateAccountDetails(ctx context.Context, cmd domain.UpdateProfileCmd) (*domain.UserProfile, error)
 	GetPreferences(ctx context.Context, userID domain.UserID) (*domain.UserPreferences, error)
 	UpdatePreferences(ctx context.Context, cmd domain.UpdatePreferencesCmd) (*domain.UserPreferences, error)
 	ChangePassword(ctx context.Context, userID domain.UserID, oldPassword, newPassword string) error
@@ -295,14 +295,14 @@ func (s *userService) GetByID(ctx context.Context, id domain.UserID) (*domain.Us
 	return s.users.GetByID(ctx, id)
 }
 
-func (s *userService) GetProfile(ctx context.Context, userID domain.UserID) (*domain.UserProfile, error) {
+func (s *userService) GetAccountDetails(ctx context.Context, userID domain.UserID) (*domain.UserProfile, error) {
 	if _, err := s.users.GetByID(ctx, userID); err != nil {
 		return nil, err
 	}
 	return s.profiles.GetByUserID(ctx, userID)
 }
 
-func (s *userService) UpdateProfile(ctx context.Context, cmd domain.UpdateProfileCmd) (*domain.UserProfile, error) {
+func (s *userService) UpdateAccountDetails(ctx context.Context, cmd domain.UpdateProfileCmd) (*domain.UserProfile, error) {
 	existing, err := s.profiles.GetByUserID(ctx, cmd.UserID)
 	if err != nil {
 		return nil, err

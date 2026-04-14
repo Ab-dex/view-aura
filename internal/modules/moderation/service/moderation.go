@@ -86,7 +86,7 @@ func (s *moderationService) SubmitCase(ctx context.Context, cmd domain.SubmitCas
 
 	// Publish event so the Python AI service picks it up.
 	// ActorID carries the content owner — the party whose content is under review.
-	_ = s.pub.Publish(ctx, events.TopicModeratonCreated, "moderation.submitted", events.ModerationSubmitted{
+	_ = s.pub.Publish(ctx, events.TopicModerationCreated, "moderation.submitted", events.ModerationSubmitted{
 		CaseID:      created.ID,
 		ContentType: string(cmd.ContentType),
 		ContentID:   cmd.ContentID,
