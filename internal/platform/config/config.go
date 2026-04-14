@@ -8,19 +8,24 @@ import (
 )
 
 // Config is the root application configuration.
-// It is composed of all service configuration domains.
 type Config struct {
-	App   AppConfig   `mapstructure:"app"`
-	HTTP  HTTPConfig  `mapstructure:"http"`
-	DB    DBConfig    `mapstructure:"db"`
-	Redis RedisConfig `mapstructure:"redis"`
-	JWT   JWTConfig   `mapstructure:"jwt"`
-	Log   LogConfig   `mapstructure:"log"`
+	App      AppConfig      `mapstructure:"app"`
+	HTTP     HTTPConfig     `mapstructure:"http"`
+	DB       DBConfig       `mapstructure:"db"`
+	Redis    RedisConfig    `mapstructure:"redis"`
+	JWT      JWTConfig      `mapstructure:"jwt"`
+	Log      LogConfig      `mapstructure:"log"`
+	Stripe   StripeConfig   `mapstructure:"stripe"`
+	R2       R2Config       `mapstructure:"r2"`
+	Temporal TemporalConfig `mapstructure:"temporal"`
+	Kafka    KafkaConfig    `mapstructure:"kafka"`
 }
+
+// ─── Existing config types (unchanged) ───────────────────────────────────────
 
 type AppConfig struct {
 	Name            string        `mapstructure:"name"`
-	Env             string        `mapstructure:"env"` // local | staging | production
+	Env             string        `mapstructure:"env"`
 	Version         string        `mapstructure:"version"`
 	ShutdownTimeout time.Duration `mapstructure:"shutdown_timeout"`
 }
@@ -63,18 +68,58 @@ type JWTConfig struct {
 }
 
 type LogConfig struct {
-	Level  string `mapstructure:"level"`  // debug | info | warn | error
-	Format string `mapstructure:"format"` // json | console
+	Level  string `mapstructure:"level"`
+	Format string `mapstructure:"format"`
 }
 
-// LoadConfig is the final entrypoint after Loader unmarshals data.
+// ─── New config types ─────────────────────────────────────────────────────────
+
+// StripeConfig holds Stripe payment credentials.
+type StripeConfig struct {
+	SecretKey     string `mapstructure:"secret_key"`
+	WebhookSecret string `mapstructure:"webhook_secret"`
+
+	// Price IDs from the Stripe dashboard — set once per environment.
+	PriceIDPro    string `mapstructure:"price_id_pro"`
+	PriceIDStudio string `mapstructure:"price_id_studio"`
+}
+
+// R2Config holds Cloudflare R2 object storage credentials.
+type R2Config struct {
+	AccountID       string `mapstructure:"account_id"`
+	Bucket          string `mapstructure:"bucket"`
+	AccessKeyID     string `mapstructure:"access_key_id"`
+	SecretAccessKey string `mapstructure:"secret_access_key"`
+	// PresignTTL is how long presigned upload/download URLs remain valid.
+	// Defaults to 15 minutes if zero.
+	PresignTTL time.Duration `mapstructure:"presign_ttl"`
+}
+
+// TemporalConfig holds Temporal workflow server connection details.
+type TemporalConfig struct {
+	HostPort  string `mapstructure:"host_port"`  // e.g. "temporal:7233"
+	Namespace string `mapstructure:"namespace"`  // e.g. "cinemaos"
+	TaskQueue string `mapstructure:"task_queue"` // e.g. "cinemaos-main"
+}
+
+// KafkaConfig holds Apache Kafka broker and producer/consumer settings.
+
+type KafkaConfig struct {
+	Brokers          string `mapstructure:"brokers"`
+	GroupID          string `mapstructure:"group_id"`
+	SecurityProtocol string `mapstructure:"security_protocol"`
+	SASLMechanism    string `mapstructure:"sasl_mechanism"`
+	SASLUsername     string `mapstructure:"sasl_username"`
+	SASLPassword     string `mapstructure:"sasl_password"`
+}
+
+// ─── Lifecycle ────────────────────────────────────────────────────────────────
+
 func LoadConfig(cfg *Config) error {
 	setDefaults(cfg)
-
 	if err := validate(cfg); err != nil {
 		return fmt.Errorf("config validation failed: %w", err)
 	}
-
 	return nil
 }
 
@@ -88,7 +133,6 @@ func setDefaults(cfg *Config) {
 	if cfg.App.ShutdownTimeout == 0 {
 		cfg.App.ShutdownTimeout = 30 * time.Second
 	}
-
 	if cfg.HTTP.Host == "" {
 		cfg.HTTP.Host = "0.0.0.0"
 	}
@@ -104,7 +148,6 @@ func setDefaults(cfg *Config) {
 	if cfg.HTTP.IdleTimeout == 0 {
 		cfg.HTTP.IdleTimeout = 120 * time.Second
 	}
-
 	if cfg.DB.MaxOpenConns == 0 {
 		cfg.DB.MaxOpenConns = 50
 	}
@@ -117,7 +160,6 @@ func setDefaults(cfg *Config) {
 	if cfg.DB.ConnMaxIdleTime == 0 {
 		cfg.DB.ConnMaxIdleTime = 5 * time.Minute
 	}
-
 	if cfg.Redis.DialTimeout == 0 {
 		cfg.Redis.DialTimeout = 5 * time.Second
 	}
@@ -133,7 +175,6 @@ func setDefaults(cfg *Config) {
 	if cfg.Redis.MinIdleConns == 0 {
 		cfg.Redis.MinIdleConns = 5
 	}
-
 	if cfg.JWT.AccessTokenTTL == 0 {
 		cfg.JWT.AccessTokenTTL = time.Hour
 	}
@@ -143,12 +184,23 @@ func setDefaults(cfg *Config) {
 	if cfg.JWT.Issuer == "" {
 		cfg.JWT.Issuer = "https://auth.cinemaos.com"
 	}
-
 	if cfg.Log.Level == "" {
 		cfg.Log.Level = "info"
 	}
 	if cfg.Log.Format == "" {
 		cfg.Log.Format = "json"
+	}
+	if cfg.Temporal.HostPort == "" {
+		cfg.Temporal.HostPort = "localhost:7233"
+	}
+	if cfg.Temporal.Namespace == "" {
+		cfg.Temporal.Namespace = "cinemaos"
+	}
+	if cfg.Temporal.TaskQueue == "" {
+		cfg.Temporal.TaskQueue = "cinemaos-main"
+	}
+	if cfg.Kafka.GroupID == "" {
+		cfg.Kafka.GroupID = "cinemaos-worker"
 	}
 }
 
@@ -165,11 +217,8 @@ func validate(cfg *Config) error {
 	if cfg.JWT.PublicKeyPath == "" {
 		return fmt.Errorf("jwt.public_key_path is required")
 	}
-	if cfg.App.Env != "local" &&
-		cfg.App.Env != "staging" &&
-		cfg.App.Env != "production" {
+	if cfg.App.Env != "local" && cfg.App.Env != "staging" && cfg.App.Env != "production" {
 		return fmt.Errorf("app.env must be local, staging, or production")
 	}
-
 	return nil
 }
