@@ -4,6 +4,7 @@ use (
 	./cmd/api
 	./internal/app
 	./internal/contract
+	./internal/events
 	./internal/modules/movie
 	./internal/modules/notification
 	./internal/modules/rating
