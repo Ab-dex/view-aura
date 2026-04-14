@@ -9,16 +9,18 @@ import (
 
 // Config is the root application configuration.
 type Config struct {
-	App      AppConfig      `mapstructure:"app"`
-	HTTP     HTTPConfig     `mapstructure:"http"`
-	DB       DBConfig       `mapstructure:"db"`
-	Redis    RedisConfig    `mapstructure:"redis"`
-	JWT      JWTConfig      `mapstructure:"jwt"`
-	Log      LogConfig      `mapstructure:"log"`
-	Stripe   StripeConfig   `mapstructure:"stripe"`
-	R2       R2Config       `mapstructure:"r2"`
-	Temporal TemporalConfig `mapstructure:"temporal"`
-	Kafka    KafkaConfig    `mapstructure:"kafka"`
+	App          AppConfig          `mapstructure:"app"`
+	HTTP         HTTPConfig         `mapstructure:"http"`
+	DB           DBConfig           `mapstructure:"db"`
+	Redis        RedisConfig        `mapstructure:"redis"`
+	JWT          JWTConfig          `mapstructure:"jwt"`
+	Log          LogConfig          `mapstructure:"log"`
+	Stripe       StripeConfig       `mapstructure:"stripe"`
+	R2           R2Config           `mapstructure:"r2"`
+	Temporal     TemporalConfig     `mapstructure:"temporal"`
+	Kafka        KafkaConfig        `mapstructure:"kafka"`
+	Tracing      TracingConfig      `mapstructure:"tracing"`
+	ModerationAI ModerationAIConfig `mapstructure:"moderation_ai"`
 }
 
 // ─── Existing config types (unchanged) ───────────────────────────────────────
@@ -111,6 +113,64 @@ type KafkaConfig struct {
 	SASLMechanism    string `mapstructure:"sasl_mechanism"`
 	SASLUsername     string `mapstructure:"sasl_username"`
 	SASLPassword     string `mapstructure:"sasl_password"`
+}
+
+// TracingConfig holds OpenTelemetry exporter settings.
+// Add this field to the root Config struct:
+//
+//	type Config struct {
+//	    ...existing fields...
+//	    Tracing TracingConfig `mapstructure:"tracing"`
+//	}
+//
+// config.yaml example:
+//
+//	tracing:
+//	  endpoint:        "otel-collector:4317"   # OTLP gRPC endpoint; empty = no-op
+//	  service_name:    "cinemaos-api"
+//	  service_version: "1.0.0"
+//	  environment:     "production"
+//	  sample_rate:     0.1                      # 10% of successful requests
+type TracingConfig struct {
+	// Endpoint is the OTLP gRPC address of the collector (e.g. Jaeger all-in-one,
+	// Grafana Agent, or OpenTelemetry Collector).
+	// Leave empty to disable tracing (no-op provider used).
+	Endpoint string `mapstructure:"endpoint"`
+
+	// ServiceName is the logical name of this service in traces.
+	// Should match the Kubernetes service name for correlation with k8s metrics.
+	ServiceName string `mapstructure:"service_name"`
+
+	// ServiceVersion is embedded in every span for deployment correlation.
+	ServiceVersion string `mapstructure:"service_version"`
+
+	// Environment is "local" | "staging" | "production".
+	Environment string `mapstructure:"environment"`
+
+	// SampleRate controls what fraction of successful traces are exported.
+	// 0.1 = 10% (PRD spec). Errors are always sampled (ParentBased sampler).
+	// Range: 0.0–1.0. Defaults to 0.1 when zero.
+	SampleRate float64 `mapstructure:"sample_rate"`
+}
+
+type ModerationAIConfig struct {
+	// Endpoint is the base URL of the Python moderation-ai service.
+	// Leave empty to use the NoopAIClient (always approves — for local dev).
+	Endpoint string `mapstructure:"endpoint"`
+}
+
+// setTracingDefaults fills zero-value TracingConfig fields.
+// Call from the existing setDefaults function in config.go.
+func setTracingDefaults(cfg *Config) {
+	if cfg.Tracing.ServiceName == "" {
+		cfg.Tracing.ServiceName = cfg.App.Name
+	}
+	if cfg.Tracing.Environment == "" {
+		cfg.Tracing.Environment = cfg.App.Env
+	}
+	if cfg.Tracing.SampleRate == 0 {
+		cfg.Tracing.SampleRate = 0.1
+	}
 }
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────

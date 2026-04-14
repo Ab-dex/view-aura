@@ -30,6 +30,7 @@ const (
 
 	// Upload pipeline topics
 	TopicUploadCompleted = "uploads.completed"
+	TopicUploadInitiated = "uploads.initiated"
 	TopicUploadFailed    = "uploads.failed"
 	TopicUploadProgress  = "uploads.progress"
 
@@ -40,9 +41,11 @@ const (
 	TopicPaymentFailed        = "payment.failed"
 
 	// Moderation topics
-	TopicModerationSubmitted = "moderation.submitted"
-	TopicModerationDecided   = "moderation.decided"
-	TopicModerationEscalated = "moderation.escalated"
+	TopicModerationSubmitted     = "moderation.submitted"
+	TopicModerationDecided       = "moderation.decided"
+	TopicModerationEscalated     = "moderation.escalated"
+	TopicModeratonCreated        = "moderation.created"
+	TopicModerationAppealDecided = "moderation.appeal_decided"
 
 	// Workflow orchestration
 	TopicWorkflowEvents = "workflow_events"

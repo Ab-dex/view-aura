@@ -37,3 +37,17 @@ type ModerationDecided struct {
 	Reason      string    `json:"reason,omitempty"`
 	OccurredAt  time.Time `json:"occurred_at"`
 }
+
+// ModerationAppealDecided is published when a senior moderator resolves an appeal.
+// Consumed by: notification-service (inform the appellant),
+// review/upload-service (restore or permanently remove content).
+type ModerationAppealDecided struct {
+	AppealID    string `json:"appeal_id"`
+	CaseID      string `json:"case_id"`
+	ContentID   string `json:"content_id"`
+	AppellantID string `json:"appellant_id"`
+	// Outcome: "upheld" (original decision stands) | "overturned" (content restored)
+	Outcome   string    `json:"outcome"`
+	DecidedBy string    `json:"decided_by"` // senior moderator user_id
+	DecidedAt time.Time `json:"decided_at"`
+}

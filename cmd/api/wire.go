@@ -7,15 +7,23 @@ import (
 
 	"github.com/Ab-dex/view-aura/internal/app"
 	"github.com/Ab-dex/view-aura/internal/contract"
+	"github.com/Ab-dex/view-aura/internal/events"
+	"github.com/Ab-dex/view-aura/internal/modules/moderation"
 	"github.com/Ab-dex/view-aura/internal/modules/movie"
 	"github.com/Ab-dex/view-aura/internal/modules/notification"
 	notifservice "github.com/Ab-dex/view-aura/internal/modules/notification/service"
+	"github.com/Ab-dex/view-aura/internal/modules/payment"
+	"github.com/Ab-dex/view-aura/internal/modules/quota"
 	"github.com/Ab-dex/view-aura/internal/modules/rating"
 	"github.com/Ab-dex/view-aura/internal/modules/review"
 	"github.com/Ab-dex/view-aura/internal/modules/social"
+	"github.com/Ab-dex/view-aura/internal/modules/upload"
 	"github.com/Ab-dex/view-aura/internal/modules/user"
 	"github.com/Ab-dex/view-aura/internal/modules/watchlist"
 	"github.com/Ab-dex/view-aura/internal/platform/config"
+	"github.com/Ab-dex/view-aura/internal/platform/r2"
+	stripeclient "github.com/Ab-dex/view-aura/internal/platform/stripe"
+	"github.com/Ab-dex/view-aura/internal/platform/temporal"
 )
 
 func ProvideModules(
@@ -26,6 +34,10 @@ func ProvideModules(
 	watchlistMod contract.Module,
 	socialMod contract.Module,
 	notifMod contract.Module,
+	paymentMod contract.Module,
+	uploadMod contract.Module,
+	quotaMod contract.Module,
+	moderationMod contract.Module,
 ) []contract.Module {
 	return []contract.Module{
 		userMod,
@@ -35,6 +47,10 @@ func ProvideModules(
 		watchlistMod,
 		socialMod,
 		notifMod,
+		paymentMod,
+		uploadMod,
+		quotaMod,
+		moderationMod,
 	}
 }
 
@@ -56,6 +72,12 @@ func InitializeApp(ctx context.Context, cfg *config.Config) (*app.App, error) {
 		// Core app infrastructure (DB, Redis, HTTP server, router, middlewares).
 		app.ProviderSet,
 
+		// ── Platform extensions ───────────────────────────────────────────────
+		stripeclient.ProviderSet,
+		r2.ProviderSet,
+		temporal.ProviderSet,
+		events.ProducerSet,
+
 		// Feature modules — each module's ProviderSet is listed here so the
 		// graph is self-contained and auditable in one place.
 		user.UserModuleSet,
@@ -65,8 +87,13 @@ func InitializeApp(ctx context.Context, cfg *config.Config) (*app.App, error) {
 		watchlist.WatchlistModuleSet,
 		social.SocialModuleSet,
 		notification.NotificationModuleSet,
+		payment.PaymentModuleSet,
+		upload.UploadModuleSet,
+		quota.QuotaModuleSet,
+		moderation.ModerationModuleSet,
 
 		ProvideAdminMiddleware,
+		wire.Bind(new(notifservice.Dispatcher), new(*notifservice.NoopDispatcher)),
 		ProvideNoopDispatcher,
 
 		// Module aggregator — converts the individual contract.Module bindings

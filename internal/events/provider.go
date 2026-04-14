@@ -52,9 +52,9 @@ func ProvideConsumer(cfg KafkaConfig) (Consumer, error) {
 	return NewConsumer(cfg)
 }
 
-// ProviderSet wires the Kafka producer. Consumer is wired separately only in
+// ProducerSet wires the Kafka producer. Consumer is wired separately only in
 // cmd/worker — the HTTP server does not need a consumer.
-var ProviderSet = wire.NewSet(ProvideProducer)
+var ProducerSet = wire.NewSet(ProvideProducer)
 
 // WorkerProviderSet wires both producer and consumer for cmd/worker.
 var WorkerProviderSet = wire.NewSet(ProvideProducer, ProvideConsumer)
