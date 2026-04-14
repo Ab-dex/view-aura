@@ -33,7 +33,7 @@ COPY . .
 # Build the API binary.
 RUN CGO_ENABLED=1 GOOS=linux go build \
       -ldflags="-s -w -extldflags '-static'" \
-      -o /bin/cinemaos-api \
+      -o /bin/viewaura-api \
       ./cmd/api
 
 # ── Runtime stage ───────────────────────────────────────────────────────────────
@@ -42,14 +42,14 @@ FROM alpine:3.19
 RUN apk add --no-cache ca-certificates tzdata
 
 # Non-root user.
-RUN addgroup -S cinemaos && adduser -S cinemaos -G cinemaos
+RUN addgroup -S viewaura && adduser -S viewaura -G viewaura
 
 WORKDIR /app
 
-COPY --from=builder /bin/cinemaos-api /app/cinemaos-api
+COPY --from=builder /bin/viewaura-api /app/viewaura-api
 
-USER cinemaos
+USER viewaura
 
 EXPOSE 8080 9090
 
-ENTRYPOINT ["/app/cinemaos-api"]
+ENTRYPOINT ["/app/viewaura-api"]

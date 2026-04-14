@@ -205,7 +205,7 @@ func PublishToCDNActivity(ctx context.Context, input PublishInput, producer even
 	logger.Info("publish_to_cdn: publishing", "asset_id", input.AssetID)
 
 	// Real-world logic would happen here...
-	streamURL := fmt.Sprintf("https://stream.cinemaos.com/%s/master.m3u8", input.AssetID)
+	streamURL := fmt.Sprintf("https://stream.viewaura.com/%s/master.m3u8", input.AssetID)
 
 	// Use the time the activity was actually scheduled/started
 	publishedAt := activity.GetInfo(ctx).StartedTime

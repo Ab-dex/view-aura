@@ -100,8 +100,8 @@ type R2Config struct {
 // TemporalConfig holds Temporal workflow server connection details.
 type TemporalConfig struct {
 	HostPort  string `mapstructure:"host_port"`  // e.g. "temporal:7233"
-	Namespace string `mapstructure:"namespace"`  // e.g. "cinemaos"
-	TaskQueue string `mapstructure:"task_queue"` // e.g. "cinemaos-main"
+	Namespace string `mapstructure:"namespace"`  // e.g. "viewaura"
+	TaskQueue string `mapstructure:"task_queue"` // e.g. "viewaura-main"
 }
 
 // KafkaConfig holds Apache Kafka broker and producer/consumer settings.
@@ -127,7 +127,7 @@ type KafkaConfig struct {
 //
 //	tracing:
 //	  endpoint:        "otel-collector:4317"   # OTLP gRPC endpoint; empty = no-op
-//	  service_name:    "cinemaos-api"
+//	  service_name:    "viewaura-api"
 //	  service_version: "1.0.0"
 //	  environment:     "production"
 //	  sample_rate:     0.1                      # 10% of successful requests
@@ -185,7 +185,7 @@ func LoadConfig(cfg *Config) error {
 
 func setDefaults(cfg *Config) {
 	if cfg.App.Name == "" {
-		cfg.App.Name = "cinemaos"
+		cfg.App.Name = "viewaura"
 	}
 	if cfg.App.Env == "" {
 		cfg.App.Env = "local"
@@ -242,7 +242,7 @@ func setDefaults(cfg *Config) {
 		cfg.JWT.RefreshTokenTTL = 30 * 24 * time.Hour
 	}
 	if cfg.JWT.Issuer == "" {
-		cfg.JWT.Issuer = "https://auth.cinemaos.com"
+		cfg.JWT.Issuer = "https://auth.viewaura.com"
 	}
 	if cfg.Log.Level == "" {
 		cfg.Log.Level = "info"
@@ -254,13 +254,13 @@ func setDefaults(cfg *Config) {
 		cfg.Temporal.HostPort = "localhost:7233"
 	}
 	if cfg.Temporal.Namespace == "" {
-		cfg.Temporal.Namespace = "cinemaos"
+		cfg.Temporal.Namespace = "viewaura"
 	}
 	if cfg.Temporal.TaskQueue == "" {
-		cfg.Temporal.TaskQueue = "cinemaos-main"
+		cfg.Temporal.TaskQueue = "viewaura-main"
 	}
 	if cfg.Kafka.GroupID == "" {
-		cfg.Kafka.GroupID = "cinemaos-worker"
+		cfg.Kafka.GroupID = "viewaura-worker"
 	}
 }
 

@@ -1,6 +1,6 @@
-// Package main is the CinemaOS API entry point.
+// Package main is the ViewAura API entry point.
 //
-// CinemaOS REST API — the backend for every client (web, iOS, Android, smart TV).
+// ViewAura REST API — the backend for every client (web, iOS, Android, smart TV).
 // All endpoints follow JSON:API-style error responses with machine-readable codes.
 //
 // # Authentication
@@ -26,13 +26,13 @@
 //	  }
 //	}
 //
-//	@title       CinemaOS API
+//	@title       Viewaura API
 //	@version     1.0
-//	@description REST API for the CinemaOS movie platform.
+//	@description REST API for the Viewaura movie platform.
 //
-//	@contact.name  CinemaOS Engineering
-//	@contact.email api@cinemaos.com
-//	@contact.url   https://cinemaos.com
+//	@contact.name  Viewaura Engineering
+//	@contact.email api@viewaura.com
+//	@contact.url   https://viewaura.com
 //
 //	@license.name MIT
 //	@license.url  https://opensource.org/licenses/MIT

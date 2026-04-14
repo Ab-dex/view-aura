@@ -11,7 +11,7 @@ import (
 // Populated from internal/platform/config.Config.Kafka.
 type KafkaConfig struct {
 	Brokers          string // comma-separated, e.g. "broker1:9092,broker2:9092"
-	GroupID          string // consumer group ID, e.g. "cinemaos-worker"
+	GroupID          string // consumer group ID, e.g. "viewaura-worker"
 	SecurityProtocol string // "PLAINTEXT" | "SASL_SSL"
 	SASLMechanism    string // "PLAIN" | "SCRAM-SHA-256"
 	SASLUsername     string

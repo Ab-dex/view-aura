@@ -23,7 +23,7 @@ func New(path string, envPrefix string) (*Loader, error) {
 	v.SetEnvPrefix(envPrefix)
 	v.AutomaticEnv()
 
-	// IMPORTANT: map ENV like CINEMAOS_DB_DSN → db.dsn
+	// IMPORTANT: map ENV like VIEWAURA_DB_DSN → db.dsn
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	// Read file

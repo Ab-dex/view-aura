@@ -19,7 +19,7 @@ COPY . .
 
 RUN CGO_ENABLED=1 GOOS=linux go build \
       -ldflags="-s -w -extldflags '-static'" \
-      -o /bin/cinemaos-worker \
+      -o /bin/viewaura-worker \
       ./cmd/worker
 
 # ── Runtime stage ───────────────────────────────────────────────────────────────
@@ -27,12 +27,12 @@ FROM alpine:3.19
 
 RUN apk add --no-cache ca-certificates tzdata
 
-RUN addgroup -S cinemaos && adduser -S cinemaos -G cinemaos
+RUN addgroup -S viewaura && adduser -S viewaura -G viewaura
 
 WORKDIR /app
 
-COPY --from=builder /bin/cinemaos-worker /app/cinemaos-worker
+COPY --from=builder /bin/viewaura-worker /app/viewaura-worker
 
-USER cinemaos
+USER viewaura
 
-ENTRYPOINT ["/app/cinemaos-worker"]
+ENTRYPOINT ["/app/viewaura-worker"]

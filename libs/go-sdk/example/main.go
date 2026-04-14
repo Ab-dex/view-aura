@@ -20,7 +20,7 @@ func main() {
 
 	// ── 1. Create the client ────────────────────────────────────────────────
 	client := sdk.New(
-		"https://api.cinemaos.com",
+		"https://api.viewaura.com",
 		sdk.WithAPIKey(""), // start unauthenticated
 	)
 

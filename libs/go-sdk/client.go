@@ -2,7 +2,7 @@
 //
 // # Quick start
 //
-//	client := sdk.New("https://api.cinemaos.com", sdk.WithAPIKey("your-token"))
+//	client := sdk.New("https://api.viewaura.com", sdk.WithAPIKey("your-token"))
 //
 //	// List movies
 //	movies, err := client.Movies.List(ctx, sdk.MovieListParams{Limit: 20})
@@ -78,7 +78,7 @@ func WithTimeout(d time.Duration) Option {
 
 // New creates a configured ViewAura API client.
 //
-//	client := sdk.New("https://api.cinemaos.com", sdk.WithAPIKey(token))
+//	client := sdk.New("https://api.viewaura.com", sdk.WithAPIKey(token))
 func New(baseURL string, opts ...Option) *Client {
 	c := &Client{
 		base: baseURL,
