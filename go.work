@@ -18,4 +18,5 @@ use (
 	./internal/modules/user
 	./internal/modules/watchlist
 	./internal/platform
+	./workflows
 )

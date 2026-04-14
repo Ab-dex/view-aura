@@ -14,6 +14,9 @@ import (
 	"github.com/Ab-dex/view-aura/internal/platform/logger"
 	r2pkg "github.com/Ab-dex/view-aura/internal/platform/r2"
 	stripepkg "github.com/Ab-dex/view-aura/internal/platform/stripe"
+	"github.com/Ab-dex/view-aura/workflows/enrichment_pipeline"
+	"github.com/Ab-dex/view-aura/workflows/moderation_saga"
+	"github.com/Ab-dex/view-aura/workflows/upload_pipeline"
 	// Workflow + activity definitions — imported for side-effect registration.
 	// _ "github.com/Ab-dex/view-aura/workflows/enrichment_pipeline"
 	// _ "github.com/Ab-dex/view-aura/workflows/moderation_saga"
@@ -102,9 +105,11 @@ func (w *Worker) Run(ctx context.Context) error {
 func (w *Worker) dispatchEvent(ctx context.Context, env events.Envelope) error {
 	switch env.Topic {
 	case events.TopicUploadCompleted:
-		return w.handleUploadCompleted(ctx, env)
+		return w.triggerUploadPipeline(ctx, env)
 	case events.TopicModerationSubmitted:
-		return w.handleModerationSubmitted(ctx, env)
+		return w.triggerModerationSaga(ctx, env)
+	case "movie.created":
+		return w.triggerEnrichmentPipeline(ctx, env)
 	default:
 		// Unknown topic — acknowledge and skip.
 		return nil
@@ -132,6 +137,42 @@ func (w *Worker) handleModerationSubmitted(ctx context.Context, env events.Envel
 			TaskQueue: w.cfg.Temporal.TaskQueue,
 		},
 		"ModerationSagaWorkflow", // registered by workflows/moderation_saga import
+		env.Payload,
+	)
+	return err
+}
+
+func (w *Worker) triggerUploadPipeline(ctx context.Context, env events.Envelope) error {
+	_, err := w.temporal.ExecuteWorkflow(ctx,
+		client.StartWorkflowOptions{
+			ID:        "upload-pipeline-" + env.ID,
+			TaskQueue: w.cfg.Temporal.TaskQueue,
+		},
+		upload_pipeline.UploadPipelineWorkflow,
+		env.Payload,
+	)
+	return err
+}
+
+func (w *Worker) triggerModerationSaga(ctx context.Context, env events.Envelope) error {
+	_, err := w.temporal.ExecuteWorkflow(ctx,
+		client.StartWorkflowOptions{
+			ID:        "moderation-saga-" + env.ID,
+			TaskQueue: w.cfg.Temporal.TaskQueue,
+		},
+		moderation_saga.ModerationSagaWorkflow,
+		env.Payload,
+	)
+	return err
+}
+
+func (w *Worker) triggerEnrichmentPipeline(ctx context.Context, env events.Envelope) error {
+	_, err := w.temporal.ExecuteWorkflow(ctx,
+		client.StartWorkflowOptions{
+			ID:        "enrichment-pipeline-" + env.ID,
+			TaskQueue: w.cfg.Temporal.TaskQueue,
+		},
+		enrichment_pipeline.EnrichmentPipelineWorkflow,
 		env.Payload,
 	)
 	return err
