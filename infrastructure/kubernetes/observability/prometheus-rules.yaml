@@ -1,0 +1,109 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: viewaura-alerts
+  namespace: monitoring
+  labels:
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: viewaura.api
+      interval: 30s
+      rules:
+        # ── Latency ───────────────────────────────────────────────────────────
+        - alert: HighLatencyP99
+          expr: |
+            histogram_quantile(0.99,
+              sum(rate(http_request_duration_seconds_bucket{namespace="viewaura"}[5m]))
+              by (le, service)
+            ) > 0.5
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "p99 latency >500ms on {{ $labels.service }}"
+            description: "p99 {{ $value | humanizeDuration }} — investigate DB or cache slowness."
+
+        # ── Error rate ────────────────────────────────────────────────────────
+        - alert: HighErrorRate
+          expr: |
+            sum(rate(http_requests_total{namespace="viewaura",status_code=~"5.."}[2m]))
+              by (service)
+            /
+            sum(rate(http_requests_total{namespace="viewaura"}[2m]))
+              by (service)
+            > 0.01
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "5xx error rate >1% on {{ $labels.service }}"
+            description: "Error rate {{ $value | humanizePercentage }} — auto-rollback may trigger."
+
+        # ── Kafka consumer lag ────────────────────────────────────────────────
+        - alert: KafkaConsumerLag
+          expr: |
+            kafka_consumer_group_lag{namespace="viewaura"} > 10000
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Kafka consumer lag >10K on {{ $labels.topic }}"
+            description: "Lag {{ $value }} messages — scale worker deployment."
+
+        # ── DB connection saturation ──────────────────────────────────────────
+        - alert: DBConnSaturation
+          expr: |
+            pgxpool_idle_connections{namespace="viewaura"} < 5
+          for: 3m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Postgres pool near saturation in {{ $labels.service }}"
+            description: "Only {{ $value }} idle connections — scale pods or increase pool size."
+
+        # ── Redis memory ──────────────────────────────────────────────────────
+        - alert: RedisMemHigh
+          expr: |
+            redis_memory_used_bytes / redis_memory_max_bytes > 0.85
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Redis memory >85%"
+            description: "Used {{ $value | humanizePercentage }} — review TTLs or expand cluster."
+
+        # ── Upload pipeline slow ──────────────────────────────────────────────
+        - alert: UploadPipelineSlow
+          expr: |
+            histogram_quantile(0.95,
+              rate(upload_pipeline_duration_seconds_bucket[15m])
+            ) > 1800
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Upload pipeline p95 >30min"
+            description: "Check GPU spot instance availability."
+
+        # ── TLS cert expiry ───────────────────────────────────────────────────
+        - alert: CertExpiringSoon
+          expr: |
+            (x509_cert_expiry - time()) / 86400 < 14
+          labels:
+            severity: warning
+          annotations:
+            summary: "TLS cert expires in <14 days for {{ $labels.subject }}"
+
+    - name: viewaura.slo
+      interval: 60s
+      rules:
+        # Availability SLO: 99.99% (52 min/year downtime budget)
+        - record: job:viewaura_availability:ratio_rate5m
+          expr: |
+            1 - (
+              sum(rate(http_requests_total{namespace="viewaura",status_code=~"5.."}[5m]))
+              /
+              sum(rate(http_requests_total{namespace="viewaura"}[5m]))
+            )

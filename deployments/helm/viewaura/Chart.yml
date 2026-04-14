@@ -1,0 +1,13 @@
+apiVersion: v2
+name: viewaura
+description: Viewaura / ViewAura — Go API + Worker Helm chart
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+maintainers:
+  - name: viewaura-platform
+keywords:
+  - viewaura
+  - viewaura
+  - streaming
+  - media

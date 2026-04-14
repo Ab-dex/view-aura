@@ -1,0 +1,93 @@
+# Cloudflare infrastructure configuration
+# Applied via Terraform (deployments/terraform/cloudflare.tf) or the
+# Cloudflare Wrangler CLI for Workers.
+
+# ─── R2 Buckets ───────────────────────────────────────────────────────────────
+# Managed via Terraform: resource "cloudflare_r2_bucket"
+
+buckets:
+  # Primary asset storage — ingest uploads, transcoded segments, posters.
+  - name: viewaura-assets
+    location: ENAM       # Eastern North America (lowest latency to us-east-1)
+    versioning: true     # enables point-in-time recovery
+    cors:
+      allowed_origins:
+        - https://viewaura.com
+        - https://www.viewaura.com
+        - https://studio.viewaura.com
+      allowed_methods: [GET, PUT, HEAD]
+      allowed_headers: [Content-Type, Content-Length, Authorization]
+      max_age_seconds: 3600
+    lifecycle:
+      # Move original uploads to Infrequent Access after 7 days
+      - id: archive-originals
+        prefix: uploads/
+        days_since_modified: 7
+        storage_class: InfrequentAccess
+      # Delete incomplete multipart uploads after 24h
+      - id: abort-multipart
+        abort_incomplete_multipart_upload_days_after_initiation: 1
+
+  # Quarantine bucket — isolated storage for moderation-flagged content.
+  # Only accessible by the moderation service service account.
+  - name: viewaura-quarantine
+    location: ENAM
+    versioning: false
+    access: private
+
+# ─── Cloudflare Workers ───────────────────────────────────────────────────────
+# Each worker is a separate wrangler.toml project under edge/
+
+workers:
+  - name: autocomplete
+    route: "viewaura.com/api/v1/search/suggest*"
+    script: edge/autocomplete/index.ts
+    description: |
+      Serves search autocomplete from Redis ZSet (search:suggest:{prefix}).
+      Cache-hit: <1ms from Cloudflare KV.
+      Cache-miss: proxies to search service, caches result for 60s.
+
+  - name: bot-detection
+    route: "viewaura.com/*"
+    script: edge/bot-detection/index.ts
+    description: |
+      Runs on every request. Uses CF Turnstile + fingerprinting to detect bots.
+      Blocks requests with CF-Connecting-IP from known bad ASNs.
+      Rate-limits unauthenticated requests to 100/min per IP.
+
+  - name: geo-routing
+    route: "viewaura.com/*"
+    script: edge/geo-routing/index.ts
+    description: |
+      Routes requests to nearest healthy origin (us-east-1 / eu-west-1 / ap-southeast-1)
+      using CF-IPCountry header. Falls back to primary on health check failure.
+
+  - name: ab-testing
+    route: "viewaura.com/*"
+    script: edge/ab-testing/index.ts
+    description: |
+      A/B test assignment using CF Durable Objects for sticky sessions.
+      Injects X-AB-Variant header read by the Go API to serve variant logic.
+
+# ─── Cache rules ──────────────────────────────────────────────────────────────
+cache_rules:
+  # Movie metadata — changes rarely, cache aggressively at edge.
+  - match: "/api/v1/movies/*"
+    ttl: 3600              # 1 hour at edge
+    cache_control: "public, max-age=3600, stale-while-revalidate=300"
+    vary: [Accept-Language]
+
+  # Static assets — immutable after deploy.
+  - match: "/assets/*"
+    ttl: 31536000          # 1 year
+    cache_control: "public, max-age=31536000, immutable"
+
+  # User-specific endpoints — never cache at edge.
+  - match: "/api/v1/me/*"
+    ttl: 0
+    cache_control: "private, no-store"
+
+  # Stripe webhook — bypass edge entirely.
+  - match: "/api/v1/webhook/stripe"
+    ttl: 0
+    bypass: true

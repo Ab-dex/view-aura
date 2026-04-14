@@ -1,0 +1,55 @@
+# ── Build stage ────────────────────────────────────────────────────────────────
+FROM golang:1.25-alpine AS builder
+
+WORKDIR /src
+
+# Install build dependencies (gcc needed for confluent-kafka-go CGo).
+RUN apk add --no-cache gcc musl-dev librdkafka-dev pkgconf
+
+# Download dependencies first (cached layer if go.sum unchanged).
+COPY go.work go.work.sum ./
+COPY cmd/api/go.mod cmd/api/go.sum ./cmd/api/
+COPY internal/app/go.mod internal/app/go.sum ./internal/app/
+COPY internal/contract/go.mod ./internal/contract/
+COPY internal/platform/go.mod internal/platform/go.sum ./internal/platform/
+COPY internal/events/go.mod internal/events/go.sum ./internal/events/
+COPY internal/modules/user/go.mod      ./internal/modules/user/
+COPY internal/modules/movie/go.mod     ./internal/modules/movie/
+COPY internal/modules/rating/go.mod    ./internal/modules/rating/
+COPY internal/modules/review/go.mod    ./internal/modules/review/
+COPY internal/modules/watchlist/go.mod ./internal/modules/watchlist/
+COPY internal/modules/social/go.mod    ./internal/modules/social/
+COPY internal/modules/notification/go.mod ./internal/modules/notification/
+COPY internal/modules/payment/go.mod   ./internal/modules/payment/
+COPY internal/modules/upload/go.mod    ./internal/modules/upload/
+COPY internal/modules/quota/go.mod     ./internal/modules/quota/
+COPY internal/modules/moderation/go.mod ./internal/modules/moderation/
+
+RUN go work sync
+
+# Copy source.
+COPY . .
+
+# Build the API binary.
+RUN CGO_ENABLED=1 GOOS=linux go build \
+      -ldflags="-s -w -extldflags '-static'" \
+      -o /bin/cinemaos-api \
+      ./cmd/api
+
+# ── Runtime stage ───────────────────────────────────────────────────────────────
+FROM alpine:3.19
+
+RUN apk add --no-cache ca-certificates tzdata
+
+# Non-root user.
+RUN addgroup -S cinemaos && adduser -S cinemaos -G cinemaos
+
+WORKDIR /app
+
+COPY --from=builder /bin/cinemaos-api /app/cinemaos-api
+
+USER cinemaos
+
+EXPOSE 8080 9090
+
+ENTRYPOINT ["/app/cinemaos-api"]

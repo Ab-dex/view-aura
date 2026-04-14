@@ -1,0 +1,38 @@
+# ── Build stage ────────────────────────────────────────────────────────────────
+FROM golang:1.25-alpine AS builder
+
+WORKDIR /src
+
+RUN apk add --no-cache gcc musl-dev librdkafka-dev pkgconf
+
+COPY go.work go.work.sum ./
+COPY cmd/worker/go.mod cmd/worker/go.sum ./cmd/worker/
+COPY internal/platform/go.mod internal/platform/go.sum ./internal/platform/
+COPY internal/events/go.mod internal/events/go.sum ./internal/events/
+COPY workflows/upload_pipeline/go.mod    ./workflows/upload_pipeline/
+COPY workflows/moderation_saga/go.mod    ./workflows/moderation_saga/
+COPY workflows/enrichment_pipeline/go.mod ./workflows/enrichment_pipeline/
+
+RUN go work sync
+
+COPY . .
+
+RUN CGO_ENABLED=1 GOOS=linux go build \
+      -ldflags="-s -w -extldflags '-static'" \
+      -o /bin/cinemaos-worker \
+      ./cmd/worker
+
+# ── Runtime stage ───────────────────────────────────────────────────────────────
+FROM alpine:3.19
+
+RUN apk add --no-cache ca-certificates tzdata
+
+RUN addgroup -S cinemaos && adduser -S cinemaos -G cinemaos
+
+WORKDIR /app
+
+COPY --from=builder /bin/cinemaos-worker /app/cinemaos-worker
+
+USER cinemaos
+
+ENTRYPOINT ["/app/cinemaos-worker"]

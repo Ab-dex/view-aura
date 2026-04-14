@@ -1,0 +1,241 @@
+version: "3.9"
+
+# Local development environment.
+# Mirrors production topology without cloud dependencies.
+# Start: docker compose up -d
+# Stop:  docker compose down -v
+
+name: viewaura
+
+volumes:
+  postgres_data:
+  redis_data:
+  kafka_data:
+  temporal_data:
+  clickhouse_data:
+
+networks:
+  viewaura:
+    driver: bridge
+
+services:
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     viewaura
+      POSTGRES_PASSWORD: viewaura
+      POSTGRES_DB:       viewaura
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U viewaura"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - viewaura
+
+  # ── Redis ───────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: >
+      redis-server
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --appendfsync everysec
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 5
+    networks:
+      - viewaura
+
+  # ── Kafka (single broker for local dev) ─────────────────────────────────────
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME:   2000
+    networks:
+      - viewaura
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    restart: unless-stopped
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: >
+        PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: >
+        PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME:  PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_RETENTION_HOURS: 24
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: kafka-topics --bootstrap-server kafka:9092 --list
+      interval: 10s
+      retries: 10
+    networks:
+      - viewaura
+
+  # Topic initialiser — creates all topics on first start.
+  kafka-init:
+    image: confluentinc/cp-kafka:7.6.0
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      "
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic user.events       --partitions 4 --replication-factor 1 &
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic movie.events      --partitions 4 --replication-factor 1 &
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic ratings           --partitions 8 --replication-factor 1 &
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic reviews           --partitions 4 --replication-factor 1 &
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic notifications     --partitions 4 --replication-factor 1 &
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic search_index      --partitions 4 --replication-factor 1 &
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic moderation        --partitions 4 --replication-factor 1 &
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic moderation.decided --partitions 4 --replication-factor 1 &
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic uploads.completed --partitions 4 --replication-factor 1 &
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic uploads.failed    --partitions 4 --replication-factor 1 &
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic payment.events    --partitions 4 --replication-factor 1 &
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic social.events     --partitions 4 --replication-factor 1 &
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic workflow_events   --partitions 4 --replication-factor 1 &
+      wait
+      echo 'All topics created.'
+      "
+    networks:
+      - viewaura
+
+  # ── Temporal ────────────────────────────────────────────────────────────────
+  temporal:
+    image: temporalio/auto-setup:1.24.1
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "7233:7233"
+    environment:
+      DB:                  postgresql
+      DB_PORT:             5432
+      POSTGRES_USER:       viewaura
+      POSTGRES_PWD:        viewaura
+      POSTGRES_SEEDS:      postgres
+      DYNAMIC_CONFIG_FILE_PATH: /etc/temporal/dynamicconfig/docker.yaml
+    volumes:
+      - temporal_data:/etc/temporal
+    healthcheck:
+      test: ["CMD", "tctl", "--address", "temporal:7233", "cluster", "health"]
+      interval: 10s
+      retries: 15
+    networks:
+      - viewaura
+
+  temporal-ui:
+    image: temporalio/ui:2.26.2
+    depends_on:
+      - temporal
+    ports:
+      - "8088:8080"
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+    networks:
+      - viewaura
+
+  # ── ClickHouse ──────────────────────────────────────────────────────────────
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.3-alpine
+    restart: unless-stopped
+    ports:
+      - "8123:8123"   # HTTP interface
+      - "9000:9000"   # Native client
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./infrastructure/clickhouse/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    networks:
+      - viewaura
+
+  # ── viewaura API ─────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: deployments/docker/Dockerfile.api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      temporal:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      APP_ENV:           local
+      DB_DSN:            postgres://viewaura:viewaura@postgres:5432/viewaura?sslmode=disable
+      REDIS_ADDR:        redis:6379
+      KAFKA_BROKERS:     ""         # empty = NoopProducer in local dev
+      TEMPORAL_HOST_PORT: temporal:7233
+      TEMPORAL_NAMESPACE: default
+      JWT_PRIVATE_KEY_PATH: /run/secrets/jwt_private_key
+      JWT_PUBLIC_KEY_PATH:  /run/secrets/jwt_public_key
+      STRIPE_SECRET_KEY:    sk_test_placeholder
+      STRIPE_WEBHOOK_SECRET: whsec_placeholder
+      R2_ACCOUNT_ID:     placeholder
+      R2_BUCKET:         viewaura-assets-local
+      R2_ACCESS_KEY_ID:  placeholder
+      R2_SECRET_ACCESS_KEY: placeholder
+      LOG_LEVEL:         debug
+      LOG_FORMAT:        console
+    networks:
+      - viewaura
+
+  # ── viewaura Worker ──────────────────────────────────────────────────────────
+  worker:
+    build:
+      context: .
+      dockerfile: deployments/docker/Dockerfile.worker
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      temporal:
+        condition: service_healthy
+    environment:
+      APP_ENV:            local
+      DB_DSN:             postgres://viewaura:viewaura@postgres:5432/viewaura?sslmode=disable
+      REDIS_ADDR:         redis:6379
+      KAFKA_BROKERS:      ""
+      TEMPORAL_HOST_PORT: temporal:7233
+      TEMPORAL_NAMESPACE: default
+      TEMPORAL_TASK_QUEUE: viewaura-main
+      LOG_LEVEL:          debug
+      LOG_FORMAT:         console
+    networks:
+      - viewaura

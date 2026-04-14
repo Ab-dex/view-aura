@@ -1,0 +1,200 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: viewaura-api
+  namespace: viewaura
+  labels:
+    app: viewaura-api
+    version: v1.0.0
+    app.kubernetes.io/component: api
+spec:
+  replicas: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 0       # zero-downtime deploys
+  selector:
+    matchLabels:
+      app: viewaura-api
+  template:
+    metadata:
+      labels:
+        app: viewaura-api
+        version: v1.0.0
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port:   "9090"
+        prometheus.io/path:   "/metrics"
+    spec:
+      # Force pods across AZs — no two pods in the same zone.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: viewaura-api
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: viewaura-api
+                topologyKey: kubernetes.io/hostname
+      serviceAccountName: viewaura-api
+      containers:
+        - name: api
+          image: ghcr.io/viewaura/viewaura-api:v1.0.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+            - containerPort: 9090
+              name: metrics
+          env:
+            - name: APP_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: viewaura-config
+                  key: APP_ENV
+            - name: DB_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-creds
+                  key: dsn
+            - name: REDIS_ADDR
+              valueFrom:
+                secretKeyRef:
+                  name: redis-creds
+                  key: addr
+            - name: KAFKA_BROKERS
+              valueFrom:
+                configMapKeyRef:
+                  name: viewaura-config
+                  key: KAFKA_BROKERS
+            - name: STRIPE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: stripe-creds
+                  key: secret_key
+            - name: STRIPE_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: stripe-creds
+                  key: webhook_secret
+            - name: R2_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: r2-creds
+                  key: access_key_id
+            - name: R2_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: r2-creds
+                  key: secret_access_key
+            - name: TEMPORAL_HOST_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: viewaura-config
+                  key: TEMPORAL_HOST_PORT
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: viewaura-config
+                  key: OTEL_ENDPOINT
+          resources:
+            requests:
+              cpu: 500m
+              memory: 128Mi
+            limits:
+              cpu: 2000m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 2
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 12   # 60s for startup before liveness kicks in
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1000
+            capabilities:
+              drop: [ALL]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: viewaura-api
+  namespace: viewaura
+  labels:
+    app: viewaura-api
+spec:
+  selector:
+    app: viewaura-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+    - name: metrics
+      port: 9090
+      targetPort: 9090
+  type: ClusterIP
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: viewaura-api-hpa
+  namespace: viewaura
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: viewaura-api
+  minReplicas: 10
+  maxReplicas: 200
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 65
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 75
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15   # double pod count every 15s during spikes
+    scaleDown:
+      stabilizationWindowSeconds: 300  # wait 5 min before scaling down
+      policies:
+        - type: Percent
+          value: 10
+          periodSeconds: 60

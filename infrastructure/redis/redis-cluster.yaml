@@ -1,0 +1,62 @@
+# Redis Cluster via the Redis Operator (Spotahome or OpsTree).
+# 6 nodes: 3 primary + 3 replica. 64GB RAM per node.
+# Keyspace prefixes:
+#   session:         user sessions
+#   blocklist:jti:   revoked JWT IDs
+#   movie:           movie metadata cache
+#   user:            watchlist, feed, embedding
+#   quota:           storage + daily upload counters
+#   upload:          upload session state
+#   payment:         webhook idempotency keys
+#   moderation:      case locks
+#   leaderboard:     genre leaderboards
+#   notif:rate:      notification rate limiters
+#   rate_limit:      Kong rate limit counters
+apiVersion: redis.redis.opstreelabs.in/v1beta2
+kind: RedisCluster
+metadata:
+  name: viewaura-redis
+  namespace: viewaura-infra
+spec:
+  clusterSize: 3
+  clusterVersion: v7
+  persistenceEnabled: true
+  redisLeader:
+    replicas: 3
+    redisConfig:
+      additionalRedisConfig: |
+        maxmemory 60gb
+        maxmemory-policy allkeys-lru
+        activedefrag yes
+        lazyfree-lazy-eviction yes
+        lazyfree-lazy-expire yes
+        appendonly yes
+        appendfsync everysec
+        save 21600 1
+        save 3600 100
+        save 900 10000
+        hz 20
+    resources:
+      requests:
+        cpu: "1"
+        memory: 64Gi
+      limits:
+        cpu: "4"
+        memory: 64Gi
+  redisFollower:
+    replicas: 3
+    resources:
+      requests:
+        cpu: "500m"
+        memory: 64Gi
+      limits:
+        cpu: "2"
+        memory: 64Gi
+  storage:
+    volumeClaimTemplate:
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: fast-ssd
+        resources:
+          requests:
+            storage: 100Gi

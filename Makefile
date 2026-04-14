@@ -1,22 +1,53 @@
 # ─── ViewAura Makefile ────────────────────────────────────────────────────────
 #
-# Usage:
-#   make swagger        — regenerate docs/swagger.json + docs/swagger.yaml
-#   make swagger-serve  — start the API locally and open the Swagger UI
-#   make wire           — regenerate Wire dependency graph
-#   make build          — compile the API binary
-#   make test           — run all tests
-#   make lint           — run golangci-lint
+# Development workflow:
 #   make dev            — swagger + wire + build in one shot
+#   make docker-up      — start local stack (Postgres, Redis, Kafka, Temporal)
+#   make migrate-up     — apply all pending Postgres migrations
+#
+# Code generation:
+#   make swagger        — regenerate docs/swagger.json + docs/swagger.yaml
+#   make wire           — regenerate Wire dependency injection graph (cmd/api)
+#   make wire-worker    — regenerate Wire dependency injection graph (cmd/worker)
+#
+# Build:
+#   make build          — compile API binary
+#   make build-worker   — compile worker binary
+#   make docker-build   — build both Docker images
+#
+# Quality:
+#   make test           — run all tests with race detector
+#   make test-coverage  — tests with HTML coverage report
+#   make lint           — run golangci-lint
+#
+# Infrastructure:
+#   make migrate-up     — apply migrations
+#   make migrate-down   — roll back last migration
+#   make kafka-topics   — create Kafka topics in local env
+#   make infra-plan     — terraform plan
+#   make infra-apply    — terraform apply
+#   make deploy-staging — helm deploy to staging
+#   make deploy-prod    — helm deploy to production
 #
 # Prerequisites:
 #   go install github.com/swaggo/swag/cmd/swag@latest
 #   go install github.com/google/wire/cmd/wire@latest
 #   go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+#   go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 
-BINARY     := bin/viewaura-api
-CMD_DIR    := ./cmd/api
-DOCS_DIR   := ./docs
+# ─── Configuration ────────────────────────────────────────────────────────────
+
+BINARY       := bin/viewaura-api
+WORKER_BIN   := bin/viewaura-worker
+CMD_DIR      := ./cmd/api
+WORKER_DIR   := ./cmd/worker
+DOCS_DIR     := ./docs
+API_IMAGE    := ghcr.io/viewaura/viewaura-api
+WORKER_IMAGE := ghcr.io/viewaura/viewaura-worker
+GIT_SHA      := $(shell git rev-parse --short HEAD)
+VERSION      := $(shell git describe --tags --always --dirty)
+DB_DSN       ?= postgres://viewaura:viewaura@localhost:5432/viewaura?sslmode=disable
+
 SWAG_FLAGS := \
 	--generalInfo   docs/doc.go \
 	--dir           . \
@@ -26,9 +57,15 @@ SWAG_FLAGS := \
 	--outputTypes   go,json,yaml \
 	--instanceName  viewaura
 
-.PHONY: all swagger swagger-serve wire build test lint dev clean
+.PHONY: all swagger swagger-serve wire wire-worker build build-worker docker-build \
+        docker-push docker-up docker-down docker-logs test test-coverage test-integration \
+        lint dev migrate-up migrate-down migrate-status kafka-topics \
+        infra-init infra-plan infra-apply deploy-staging deploy-prod rollback \
+        tools clean help
 
 all: dev
+
+# ─── Code generation ──────────────────────────────────────────────────────────
 
 ## swagger: Regenerate OpenAPI docs from swag annotations.
 ##          Output: docs/docs.go  docs/swagger.json  docs/swagger.yaml
@@ -37,34 +74,208 @@ swagger:
 	swag init $(SWAG_FLAGS)
 	@echo "✓ docs written to $(DOCS_DIR)/"
 
-## swagger-serve: Run the API in local mode and print the Swagger UI URL.
+## swagger-serve: Run the API in local mode and open the Swagger UI.
 swagger-serve: swagger build
 	@echo "→ starting server (Swagger UI at http://localhost:8080/swagger/index.html)"
 	APP_ENV=local $(BINARY)
 
-## wire: Regenerate the Wire dependency injection graph.
+## wire: Regenerate Wire dependency injection graph for cmd/api.
 wire:
-	@echo "→ running wire..."
+	@echo "→ running wire (cmd/api)..."
 	cd $(CMD_DIR) && wire
 	@echo "✓ wire_gen.go updated"
+
+## wire-worker: Regenerate Wire dependency injection graph for cmd/worker.
+wire-worker:
+	@echo "→ running wire (cmd/worker)..."
+	cd $(WORKER_DIR) && wire
+	@echo "✓ wire_gen.go updated"
+
+# ─── Build ────────────────────────────────────────────────────────────────────
 
 ## build: Compile the API binary.
 build:
 	@echo "→ building $(BINARY)..."
-	go build -o $(BINARY) $(CMD_DIR)
+	CGO_ENABLED=1 go build \
+		-ldflags="-s -w -X main.Version=$(VERSION)" \
+		-o $(BINARY) $(CMD_DIR)
 	@echo "✓ $(BINARY) ready"
+
+## build-worker: Compile the worker binary.
+build-worker:
+	@echo "→ building $(WORKER_BIN)..."
+	CGO_ENABLED=1 go build \
+		-ldflags="-s -w -X main.Version=$(VERSION)" \
+		-o $(WORKER_BIN) $(WORKER_DIR)
+	@echo "✓ $(WORKER_BIN) ready"
+
+## docker-build: Build API and worker Docker images.
+docker-build:
+	docker build -f deployments/docker/Dockerfile.api \
+		-t $(API_IMAGE):$(GIT_SHA) \
+		-t $(API_IMAGE):latest .
+	docker build -f deployments/docker/Dockerfile.worker \
+		-t $(WORKER_IMAGE):$(GIT_SHA) \
+		-t $(WORKER_IMAGE):latest .
+
+## docker-push: Push images to the container registry.
+docker-push:
+	docker push $(API_IMAGE):$(GIT_SHA)
+	docker push $(API_IMAGE):latest
+	docker push $(WORKER_IMAGE):$(GIT_SHA)
+	docker push $(WORKER_IMAGE):latest
+
+# ─── Local development stack ──────────────────────────────────────────────────
+
+## docker-up: Start the local dev stack (Postgres, Redis, Kafka, Temporal, ClickHouse).
+docker-up:
+	@echo "→ starting local dev environment..."
+	docker compose -f deployments/docker/docker-compose.yml up -d
+	@echo ""
+	@echo "  API:        http://localhost:8080"
+	@echo "  Swagger UI: http://localhost:8080/swagger/index.html"
+	@echo "  Temporal:   http://localhost:8088"
+	@echo "  ClickHouse: http://localhost:8123"
+	@echo ""
+
+## docker-down: Stop and remove the local dev stack.
+docker-down:
+	docker compose -f deployments/docker/docker-compose.yml down -v
+
+## docker-logs: Follow logs from API and worker containers.
+docker-logs:
+	docker compose -f deployments/docker/docker-compose.yml logs -f api worker
+
+# ─── Quality ──────────────────────────────────────────────────────────────────
 
 ## test: Run all tests with race detector.
 test:
 	go test -race ./...
 
+## test-coverage: Run tests and generate an HTML coverage report.
+test-coverage:
+	go test -race -coverprofile=coverage.out -covermode=atomic ./...
+	go tool cover -html=coverage.out -o coverage.html
+	@echo "✓ coverage report: coverage.html"
+
+## test-integration: Run integration tests (requires docker-up).
+test-integration:
+	go test -v -tags=integration -timeout=120s ./...
+
 ## lint: Run golangci-lint.
 lint:
 	golangci-lint run ./...
 
-## dev: Full regeneration cycle — swagger, wire, then build.
-dev: swagger wire build
+# ─── Dev shortcut ─────────────────────────────────────────────────────────────
 
-## clean: Remove compiled artefacts.
+## dev: Full regeneration cycle — swagger, wire (api + worker), build both.
+dev: swagger wire wire-worker build build-worker
+
+# ─── Database migrations ──────────────────────────────────────────────────────
+
+## migrate-up: Apply all pending Postgres migrations.
+migrate-up:
+	@echo "→ running migrations..."
+	migrate -path infrastructure/postgres/migrations \
+	        -database "$(DB_DSN)" up
+	@echo "✓ migrations applied"
+
+## migrate-down: Roll back the last migration.
+migrate-down:
+	migrate -path infrastructure/postgres/migrations \
+	        -database "$(DB_DSN)" down 1
+
+## migrate-status: Show current migration version.
+migrate-status:
+	migrate -path infrastructure/postgres/migrations \
+	        -database "$(DB_DSN)" version
+
+# ─── Kafka ────────────────────────────────────────────────────────────────────
+
+## kafka-topics: Create all Kafka topics in the local dev environment.
+##               Topics are also created automatically by the kafka-init
+##               container on docker-up — use this for manual reset only.
+kafka-topics:
+	@echo "→ creating Kafka topics..."
+	@for topic in \
+		user.events movie.events ratings rating.aggregates reviews \
+		watch_events notifications search_index moderation moderation.decided \
+		uploads.completed uploads.failed payment.events social.events \
+		workflow_events box_office; do \
+		docker exec viewaura-kafka-1 \
+			kafka-topics --bootstrap-server localhost:9092 \
+			--create --if-not-exists \
+			--topic $$topic \
+			--partitions 4 \
+			--replication-factor 1; \
+	done
+	@echo "✓ topics ready"
+
+# ─── Infrastructure (Terraform + Helm) ───────────────────────────────────────
+
+## infra-init: Initialise Terraform providers and backend.
+infra-init:
+	cd deployments/terraform && terraform init
+
+## infra-plan: Preview infrastructure changes (production).
+infra-plan:
+	cd deployments/terraform && \
+		terraform plan -var-file=environments/production.tfvars
+
+## infra-apply: Apply infrastructure changes (production).
+infra-apply:
+	cd deployments/terraform && \
+		terraform apply -var-file=environments/production.tfvars
+
+## deploy-staging: Helm deploy to staging cluster.
+deploy-staging:
+	helm upgrade --install viewaura deployments/helm/viewaura \
+		--namespace viewaura \
+		--create-namespace \
+		--set global.imageTag=$(GIT_SHA) \
+		--set global.env=staging \
+		--values deployments/helm/viewaura/values.yaml \
+		--values deployments/helm/viewaura/values.staging.yaml \
+		--wait --timeout=5m
+
+## deploy-prod: Helm deploy to production cluster.
+deploy-prod:
+	helm upgrade --install viewaura deployments/helm/viewaura \
+		--namespace viewaura \
+		--create-namespace \
+		--set global.imageTag=$(GIT_SHA) \
+		--set global.env=production \
+		--values deployments/helm/viewaura/values.yaml \
+		--wait --timeout=10m
+
+## rollback: Roll back the last Helm release.
+rollback:
+	helm rollback viewaura --namespace viewaura
+
+# ─── Tool installation ────────────────────────────────────────────────────────
+
+## tools: Install all required CLI tools.
+tools:
+	go install github.com/swaggo/swag/cmd/swag@latest
+	go install github.com/google/wire/cmd/wire@latest
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+
+# ─── Clean ────────────────────────────────────────────────────────────────────
+
+## clean: Remove compiled artefacts and generated docs.
 clean:
-	rm -rf bin/ $(DOCS_DIR)/docs.go $(DOCS_DIR)/swagger.json $(DOCS_DIR)/swagger.yaml
+	rm -rf bin/ \
+		$(DOCS_DIR)/docs.go \
+		$(DOCS_DIR)/swagger.json \
+		$(DOCS_DIR)/swagger.yaml \
+		coverage.out \
+		coverage.html
+
+# ─── Help ─────────────────────────────────────────────────────────────────────
+
+## help: Print available targets.
+help:
+	@grep -E '^## [a-zA-Z_-]+:' $(MAKEFILE_LIST) \
+		| sed 's/## //' \
+		| column -t -s ':'

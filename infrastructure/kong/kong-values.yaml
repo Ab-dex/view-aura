@@ -1,0 +1,60 @@
+# Kong Helm chart values (kong/kong chart)
+# Deploy: helm upgrade --install kong kong/kong -f kong-values.yaml -n kong --create-namespace
+
+replicaCount: 3
+
+image:
+  repository: kong
+  tag: "3.6"
+
+env:
+  database: "off"          # DB-less mode — config loaded from ConfigMap
+  declarative_config: /kong_dbless/kong.yaml
+  log_level: info
+  nginx_worker_processes: "auto"
+  proxy_access_log: /dev/stdout
+  proxy_error_log:  /dev/stderr
+
+resources:
+  requests:
+    cpu: "1"
+    memory: 512Mi
+  limits:
+    cpu: "4"
+    memory: 2Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 30
+  targetCPUUtilizationPercentage: 70
+
+ingressController:
+  enabled: true
+  installCRDs: true
+
+proxy:
+  enabled: true
+  type: LoadBalancer
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+  http:
+    enabled: false     # HTTP disabled — force HTTPS
+  tls:
+    enabled: true
+    servicePort: 443
+
+# Global plugins applied to every route.
+plugins:
+  configMaps:
+    - pluginName: rate-limiting
+      name: kong-rate-limit-config
+    - pluginName: prometheus
+      name: kong-prometheus-config
+
+# Expose metrics for Prometheus scraping.
+serviceMonitor:
+  enabled: true
+  namespace: monitoring
+  interval: 30s

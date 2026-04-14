@@ -1,0 +1,58 @@
+# Strict mTLS for all pods in the viewaura namespace.
+# Envoy sidecars automatically negotiate TLS — no application code changes.
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: viewaura
+spec:
+  mtls:
+    mode: STRICT
+---
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: viewaura-workers
+spec:
+  mtls:
+    mode: STRICT
+---
+# AuthorizationPolicy: only allow traffic from within the mesh.
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-mesh-traffic
+  namespace: viewaura
+spec:
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/viewaura/sa/viewaura-api"
+              - "cluster.local/ns/viewaura-workers/sa/viewaura-worker"
+              - "cluster.local/ns/kong/sa/kong"
+              - "cluster.local/ns/monitoring/sa/prometheus"
+---
+# Circuit breaker via DestinationRule.
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: viewaura-api
+  namespace: viewaura
+spec:
+  host: viewaura-api.viewaura.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 200
+      http:
+        h2UpgradePolicy: DEFAULT
+        http1MaxPendingRequests: 100
+        maxRequestsPerConnection: 1000
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50

@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: viewaura-config
+  namespace: viewaura
+data:
+  APP_ENV:             "production"
+  HTTP_PORT:           "8080"
+  LOG_LEVEL:           "info"
+  LOG_FORMAT:          "json"
+
+  # Kafka — brokers injected by Confluent Cloud operator or Helm values
+  KAFKA_BROKERS:       "kafka-0.kafka:9092,kafka-1.kafka:9092,kafka-2.kafka:9092"
+  KAFKA_GROUP_ID:      "viewaura-worker"
+
+  # Temporal
+  TEMPORAL_HOST_PORT:  "temporal-frontend.viewaura-infra:7233"
+  TEMPORAL_NAMESPACE:  "viewaura"
+  TEMPORAL_TASK_QUEUE: "viewaura-main"
+
+  # Tracing (OpenTelemetry → Jaeger)
+  OTEL_ENDPOINT:       "http://otel-collector.monitoring:4317"
+
+  # R2 storage
+  R2_ACCOUNT_ID:       "your-cloudflare-account-id"
+  R2_BUCKET:           "viewaura-assets"
+  R2_PRESIGN_TTL:      "15m"
+
+  # Moderation AI service (Python)
+  MODERATION_AI_ENDPOINT: "http://content-moderation.viewaura:8000"

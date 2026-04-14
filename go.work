@@ -18,5 +18,6 @@ use (
 	./internal/modules/user
 	./internal/modules/watchlist
 	./internal/platform
+	./libs/go-sdk
 	./workflows
 )

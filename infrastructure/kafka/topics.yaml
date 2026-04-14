@@ -1,0 +1,286 @@
+# Kafka topic configuration applied via kafka-topics.sh or the Strimzi
+# KafkaTopic CRD when running on Kubernetes with the Strimzi operator.
+#
+# Partition count follows the PRD:
+#   Hot topics (ratings, watch_events) → 64-128 partitions
+#   Standard topics                    → 16-32 partitions
+#   Low-volume topics                  → 8 partitions
+#
+# Retention follows event consumer requirements:
+#   Long-lived replay topics           → 30d (workflow_events, watch_events)
+#   Standard                           → 7d
+#   High-frequency analytics           → 3d (notifications)
+#   Box office / compliance            → 90d
+
+---
+# user.events
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: user-events
+  namespace: viewaura-infra
+  labels:
+    strimzi.io/cluster: viewaura-kafka
+spec:
+  partitions: 32
+  replicas: 3
+  config:
+    retention.ms: "604800000"         # 7 days
+    cleanup.policy: delete
+    compression.type: snappy
+    min.insync.replicas: "2"
+
+---
+# movie.events
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: movie-events
+  namespace: viewaura-infra
+  labels:
+    strimzi.io/cluster: viewaura-kafka
+spec:
+  partitions: 32
+  replicas: 3
+  config:
+    retention.ms: "604800000"
+    compression.type: snappy
+    min.insync.replicas: "2"
+
+---
+# ratings — hot topic, high fan-out
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: ratings
+  namespace: viewaura-infra
+  labels:
+    strimzi.io/cluster: viewaura-kafka
+spec:
+  partitions: 64
+  replicas: 3
+  config:
+    retention.ms: "604800000"         # 7 days
+    compression.type: snappy
+    min.insync.replicas: "2"
+
+---
+# rating.aggregates
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: rating-aggregates
+  namespace: viewaura-infra
+  labels:
+    strimzi.io/cluster: viewaura-kafka
+spec:
+  partitions: 16
+  replicas: 3
+  config:
+    retention.ms: "604800000"
+    compression.type: snappy
+    min.insync.replicas: "2"
+
+---
+# reviews
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: reviews
+  namespace: viewaura-infra
+  labels:
+    strimzi.io/cluster: viewaura-kafka
+spec:
+  partitions: 32
+  replicas: 3
+  config:
+    retention.ms: "604800000"
+    compression.type: snappy
+    min.insync.replicas: "2"
+
+---
+# watch_events — hottest topic (every stream session)
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: watch-events
+  namespace: viewaura-infra
+  labels:
+    strimzi.io/cluster: viewaura-kafka
+spec:
+  partitions: 128
+  replicas: 3
+  config:
+    retention.ms: "2592000000"        # 30 days (Flink sessionization)
+    compression.type: snappy
+    min.insync.replicas: "2"
+
+---
+# notifications — high throughput, short retention
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: notifications
+  namespace: viewaura-infra
+  labels:
+    strimzi.io/cluster: viewaura-kafka
+spec:
+  partitions: 32
+  replicas: 3
+  config:
+    retention.ms: "259200000"         # 3 days
+    compression.type: snappy
+    min.insync.replicas: "2"
+
+---
+# search_index
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: search-index
+  namespace: viewaura-infra
+  labels:
+    strimzi.io/cluster: viewaura-kafka
+spec:
+  partitions: 32
+  replicas: 3
+  config:
+    retention.ms: "86400000"          # 1 day
+    compression.type: snappy
+    min.insync.replicas: "2"
+
+---
+# moderation
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: moderation
+  namespace: viewaura-infra
+  labels:
+    strimzi.io/cluster: viewaura-kafka
+spec:
+  partitions: 16
+  replicas: 3
+  config:
+    retention.ms: "604800000"
+    compression.type: snappy
+    min.insync.replicas: "2"
+
+---
+# moderation.decided
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: moderation-decided
+  namespace: viewaura-infra
+  labels:
+    strimzi.io/cluster: viewaura-kafka
+spec:
+  partitions: 16
+  replicas: 3
+  config:
+    retention.ms: "604800000"
+    compression.type: snappy
+    min.insync.replicas: "2"
+
+---
+# uploads.completed
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: uploads-completed
+  namespace: viewaura-infra
+  labels:
+    strimzi.io/cluster: viewaura-kafka
+spec:
+  partitions: 16
+  replicas: 3
+  config:
+    retention.ms: "604800000"
+    compression.type: snappy
+    min.insync.replicas: "2"
+
+---
+# uploads.failed
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: uploads-failed
+  namespace: viewaura-infra
+  labels:
+    strimzi.io/cluster: viewaura-kafka
+spec:
+  partitions: 8
+  replicas: 3
+  config:
+    retention.ms: "604800000"
+    compression.type: snappy
+    min.insync.replicas: "2"
+
+---
+# payment.events
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: payment-events
+  namespace: viewaura-infra
+  labels:
+    strimzi.io/cluster: viewaura-kafka
+spec:
+  partitions: 16
+  replicas: 3
+  config:
+    retention.ms: "2592000000"        # 30 days (billing compliance)
+    compression.type: snappy
+    min.insync.replicas: "2"
+
+---
+# workflow_events
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: workflow-events
+  namespace: viewaura-infra
+  labels:
+    strimzi.io/cluster: viewaura-kafka
+spec:
+  partitions: 16
+  replicas: 3
+  config:
+    retention.ms: "2592000000"        # 30 days
+    compression.type: snappy
+    min.insync.replicas: "2"
+
+---
+# social.events
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: social-events
+  namespace: viewaura-infra
+  labels:
+    strimzi.io/cluster: viewaura-kafka
+spec:
+  partitions: 32
+  replicas: 3
+  config:
+    retention.ms: "604800000"
+    compression.type: snappy
+    min.insync.replicas: "2"
+
+---
+# box_office — long retention for awards / analytics
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: box-office
+  namespace: viewaura-infra
+  labels:
+    strimzi.io/cluster: viewaura-kafka
+spec:
+  partitions: 8
+  replicas: 3
+  config:
+    retention.ms: "7776000000"        # 90 days
+    compression.type: snappy
+    min.insync.replicas: "2"

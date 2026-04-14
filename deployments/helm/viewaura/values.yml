@@ -1,0 +1,96 @@
+global:
+  imageRegistry: ghcr.io/viewaura
+  imageTag: latest
+  env: production
+
+api:
+  image: viewaura-api
+  replicas:
+    min: 10
+    max: 200
+  resources:
+    requests:
+      cpu: 500m
+      memory: 128Mi
+    limits:
+      cpu: 2000m
+      memory: 512Mi
+  hpa:
+    cpuTarget: 65
+    memoryTarget: 75
+  service:
+    port: 80
+    targetPort: 8080
+  ingress:
+    enabled: true
+    host: api.viewaura.com
+    tls: true
+    tlsSecret: viewaura-tls
+    annotations:
+      kubernetes.io/ingress.class: kong
+      konghq.com/plugins: rate-limit-api,jwt-auth,cors,request-id
+
+worker:
+  image: viewaura-worker
+  replicas:
+    min: 3
+    max: 30
+  resources:
+    requests:
+      cpu: 500m
+      memory: 256Mi
+    limits:
+      cpu: 2000m
+      memory: 1Gi
+  hpa:
+    cpuTarget: 70
+
+config:
+  appEnv: production
+  logLevel: info
+  logFormat: json
+  kafkaBrokers: "kafka-0.kafka:9092,kafka-1.kafka:9092,kafka-2.kafka:9092"
+  kafkaGroupId: viewaura-worker
+  temporalHostPort: temporal-frontend.viewaura-infra:7233
+  temporalNamespace: viewaura
+  temporalTaskQueue: viewaura-main
+  otelEndpoint: http://otel-collector.monitoring:4317
+  r2AccountId: ""        # override in sealed secrets
+  r2Bucket: viewaura-assets
+  r2PresignTtl: 15m
+  moderationAiEndpoint: http://content-moderation.viewaura:8000
+
+# References to external secrets (Sealed Secrets / External Secrets Operator).
+secrets:
+  postgres:
+    secretName: postgres-creds
+    dsnKey: dsn
+  redis:
+    secretName: redis-creds
+    addrKey: addr
+  stripe:
+    secretName: stripe-creds
+    secretKeyKey: secret_key
+    webhookSecretKey: webhook_secret
+  r2:
+    secretName: r2-creds
+    accessKeyIdKey: access_key_id
+    secretAccessKeyKey: secret_access_key
+  jwt:
+    secretName: jwt-keys
+    privateKeyPath: /run/secrets/jwt_private_key
+    publicKeyPath: /run/secrets/jwt_public_key
+
+serviceAccount:
+  api:
+    name: viewaura-api
+    annotations: {}   # add IRSA / Workload Identity annotations here
+  worker:
+    name: viewaura-worker
+    annotations: {}
+
+podDisruptionBudget:
+  api:
+    minAvailable: 5
+  worker:
+    minAvailable: 1

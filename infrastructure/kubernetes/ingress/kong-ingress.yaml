@@ -1,0 +1,102 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: viewaura-api
+  namespace: viewaura
+  annotations:
+    kubernetes.io/ingress.class: kong
+    konghq.com/strip-path: "false"
+    konghq.com/protocols: "https"
+    konghq.com/https-redirect-status-code: "301"
+    # Rate limiting — applied at Kong proxy layer before hitting pods.
+    konghq.com/plugins: rate-limit-api,jwt-auth,cors,request-id
+spec:
+  tls:
+    - hosts:
+        - api.viewaura.com
+      secretName: viewaura-tls
+  rules:
+    - host: api.viewaura.com
+      http:
+        paths:
+          - path: /api/v1
+            pathType: Prefix
+            backend:
+              service:
+                name: viewaura-api
+                port:
+                  name: http
+---
+# Rate limiting plugin — 1000 req/min per user, 10000 req/min per IP.
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: rate-limit-api
+  namespace: viewaura
+plugin: rate-limiting
+config:
+  minute: 1000
+  hour: 50000
+  policy: redis
+  redis_host: redis-master.viewaura-infra
+  redis_port: 6379
+  redis_database: 1
+  limit_by: consumer
+  hide_client_headers: false
+---
+# JWT auth plugin — validates Bearer tokens before any service sees the request.
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: jwt-auth
+  namespace: viewaura
+plugin: jwt
+config:
+  key_claim_name: kid
+  claims_to_verify: [exp]
+  uri_param_names: [jwt]
+  cookie_names: []
+---
+# CORS plugin — allow the web app and mobile BFF origins.
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: cors
+  namespace: viewaura
+plugin: cors
+config:
+  origins:
+    - https://viewaura.com
+    - https://www.viewaura.com
+    - https://admin.viewaura.com
+  methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
+  headers: [Authorization, Content-Type, X-Request-ID, X-Session-ID]
+  exposed_headers: [X-Request-ID]
+  credentials: true
+  max_age: 3600
+---
+# Stripe webhook route — bypasses JWT auth (signature verified inside the app).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: stripe-webhook
+  namespace: viewaura
+  annotations:
+    kubernetes.io/ingress.class: kong
+    konghq.com/plugins: cors,request-id   # no jwt-auth here
+spec:
+  tls:
+    - hosts:
+        - api.viewaura.com
+      secretName: viewaura-tls
+  rules:
+    - host: api.viewaura.com
+      http:
+        paths:
+          - path: /api/v1/webhook/stripe
+            pathType: Exact
+            backend:
+              service:
+                name: viewaura-api
+                port:
+                  name: http

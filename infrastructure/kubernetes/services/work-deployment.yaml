@@ -1,0 +1,115 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: viewaura-worker
+  namespace: viewaura-workers
+  labels:
+    app: viewaura-worker
+    app.kubernetes.io/component: worker
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: viewaura-worker
+  template:
+    metadata:
+      labels:
+        app: viewaura-worker
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+    spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: viewaura-worker
+      serviceAccountName: viewaura-worker
+      containers:
+        - name: worker
+          image: ghcr.io/viewaura/viewaura-worker:v1.0.0
+          imagePullPolicy: Always
+          env:
+            - name: APP_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: viewaura-config
+                  key: APP_ENV
+            - name: DB_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-creds
+                  key: dsn
+            - name: REDIS_ADDR
+              valueFrom:
+                secretKeyRef:
+                  name: redis-creds
+                  key: addr
+            - name: KAFKA_BROKERS
+              valueFrom:
+                configMapKeyRef:
+                  name: viewaura-config
+                  key: KAFKA_BROKERS
+            - name: TEMPORAL_HOST_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: viewaura-config
+                  key: TEMPORAL_HOST_PORT
+            - name: TEMPORAL_TASK_QUEUE
+              value: "viewaura-main"
+            - name: R2_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: r2-creds
+                  key: access_key_id
+            - name: R2_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: r2-creds
+                  key: secret_access_key
+          resources:
+            requests:
+              cpu: 500m
+              memory: 256Mi
+            limits:
+              cpu: 2000m
+              memory: 1Gi
+          livenessProbe:
+            exec:
+              command: ["/bin/sh", "-c", "pgrep viewaura-worker"]
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1000
+            capabilities:
+              drop: [ALL]
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: viewaura-worker-hpa
+  namespace: viewaura-workers
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: viewaura-worker
+  minReplicas: 3
+  maxReplicas: 30
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
