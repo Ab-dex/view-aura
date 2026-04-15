@@ -35,6 +35,15 @@ const (
 	ContentRatingNR   ContentRating = "NR"
 )
 
+func (c ContentRating) IsValid() bool {
+	switch c {
+	case ContentRatingG, ContentRatingPG, ContentRatingPG13, ContentRatingR, ContentRatingNC17, ContentRatingNR:
+		return true
+	default:
+		return false
+	}
+}
+
 type CreditRole string
 
 const (

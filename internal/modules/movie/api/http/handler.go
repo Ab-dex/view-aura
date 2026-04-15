@@ -1,9 +1,7 @@
 package httpapi
 
 import (
-	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -188,7 +186,7 @@ type filmingLocationResponse struct {
 // ─── Handlers ─────────────────────────────────────────────────────────────────
 
 func (h *MovieHandler) List(c *gin.Context) {
-	filter, err := parseMovieFilter(c)
+	filter, err := domain.ParseMovieFilter(c)
 	if err != nil {
 		respondError(c, apierror.Validation(err.Error(), nil))
 		return
@@ -740,78 +738,4 @@ func orSlice(s []string) []string {
 		return []string{}
 	}
 	return s
-}
-
-func parseMovieFilter(c *gin.Context) (domain.MovieFilter, error) {
-	var f domain.MovieFilter
-
-	f.Query = c.Query("q")
-	f.SortBy = c.DefaultQuery("sort_by", "popularity_score")
-	f.SortDir = c.DefaultQuery("sort_dir", "desc")
-
-	// genres
-	f.Genres = c.QueryArray("genre")
-
-	// content ratings (NEW)
-	if ratings := c.QueryArray("content_rating"); len(ratings) > 0 {
-		f.ContentRatings = make([]domain.ContentRating, 0, len(ratings))
-		for _, r := range ratings {
-			f.ContentRatings = append(f.ContentRatings, domain.ContentRating(r))
-		}
-	}
-
-	// year range
-	if v := c.Query("year_from"); v != "" {
-		n, err := strconv.Atoi(v)
-		if err != nil || n < 1800 {
-			return f, fmt.Errorf("invalid year_from")
-		}
-		f.YearFrom = &n
-	}
-
-	if v := c.Query("year_to"); v != "" {
-		n, err := strconv.Atoi(v)
-		if err != nil {
-			return f, fmt.Errorf("invalid year_to")
-		}
-		f.YearTo = &n
-	}
-
-	// runtime
-	if v := c.Query("runtime_max"); v != "" {
-		n, err := strconv.Atoi(v)
-		if err != nil || n < 0 {
-			return f, fmt.Errorf("invalid runtime_max")
-		}
-		f.RuntimeMax = &n
-	}
-
-	// rating
-	if v := c.Query("min_rating"); v != "" {
-		val, err := strconv.ParseFloat(v, 64)
-		if err != nil || val < 0 || val > 10 {
-			return f, fmt.Errorf("invalid min_rating")
-		}
-		f.MinRating = &val
-	}
-
-	// pagination (SAFE)
-	f.Limit = clampInt(c.DefaultQuery("limit", "20"), 1, 100)
-	f.Offset = clampInt(c.DefaultQuery("offset", "0"), 0, 100000)
-
-	return f, nil
-}
-
-func clampInt(v string, min, max int) int {
-	n, err := strconv.Atoi(v)
-	if err != nil {
-		return min
-	}
-	if n < min {
-		return min
-	}
-	if n > max {
-		return max
-	}
-	return n
 }
