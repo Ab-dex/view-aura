@@ -9,9 +9,10 @@ COPY go.work go.work.sum ./
 COPY cmd/worker/go.mod cmd/worker/go.sum ./cmd/worker/
 COPY internal/platform/go.mod internal/platform/go.sum ./internal/platform/
 COPY internal/events/go.mod internal/events/go.sum ./internal/events/
-COPY workflows/upload_pipeline/go.mod    ./workflows/upload_pipeline/
-COPY workflows/moderation_saga/go.mod    ./workflows/moderation_saga/
-COPY workflows/enrichment_pipeline/go.mod ./workflows/enrichment_pipeline/
+# COPY workflows/upload_pipeline/go.mod    ./workflows/upload_pipeline/
+# COPY workflows/moderation_saga/go.mod    ./workflows/moderation_saga/
+# COPY workflows/enrichment_pipeline/go.mod ./workflows/enrichment_pipeline/
+COPY workflows/go.mod workflows/go.sum ./workflows/
 
 RUN go work sync
 

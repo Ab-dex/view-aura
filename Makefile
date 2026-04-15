@@ -128,7 +128,7 @@ docker-push:
 # ─── Local development stack ──────────────────────────────────────────────────
 
 ## docker-up: Start the local dev stack (Postgres, Redis, Kafka, Temporal, ClickHouse).
-docker-up:
+docker-base_up:
 	@echo "→ starting local dev environment..."
 	docker compose -f deployments/docker/docker-compose.yml up -d
 	@echo ""
@@ -137,6 +137,21 @@ docker-up:
 	@echo "  Temporal:   http://localhost:8088"
 	@echo "  ClickHouse: http://localhost:8123"
 	@echo ""
+
+docker-up:
+	@echo "→ starting FULL stack (base + worker)..."
+	docker compose -f deployments/docker/docker-compose.yml --profile worker up -d
+
+	@echo ""
+	@echo "  API:        http://localhost:8080"
+	@echo "  Swagger UI: http://localhost:8080/swagger/index.html"
+	@echo "  Temporal:   http://localhost:8088"
+	@echo "  ClickHouse: http://localhost:8123"
+	@echo ""
+
+docker-worker_up:
+	@echo "→ starting worker..."
+	docker compose -f deployments/docker/docker-compose.yml --profile worker up -d worker
 
 ## docker-down: Stop and remove the local dev stack.
 docker-down:
@@ -281,7 +296,7 @@ help:
 		| column -t -s ':'
 
 ## app: Start full app (infra + migrate + swagger + run API)
-app: docker-up
+app: docker-base_up
 	@echo "→ waiting for postgres..."
 	sleep 5
 	$(MAKE) migrate-up

@@ -180,7 +180,7 @@ services:
   # ── viewaura API ─────────────────────────────────────────────────────────────
   api:
     build:
-      context: .
+      context: ../..
       dockerfile: deployments/docker/Dockerfile.api
     restart: unless-stopped
     depends_on:
@@ -217,9 +217,11 @@ services:
   # ── viewaura Worker ──────────────────────────────────────────────────────────
   worker:
     build:
-      context: .
+      context: ../..
       dockerfile: deployments/docker/Dockerfile.worker
     restart: unless-stopped
+    profiles:
+      - worker
     depends_on:
       postgres:
         condition: service_healthy
