@@ -61,7 +61,7 @@ SWAG_FLAGS := \
         docker-push docker-up docker-down docker-logs test test-coverage test-integration \
         lint dev migrate-up migrate-down migrate-status kafka-topics \
         infra-init infra-plan infra-apply deploy-staging deploy-prod rollback \
-        tools clean help
+        tools clean help app run
 
 all: dev
 
@@ -279,3 +279,16 @@ help:
 	@grep -E '^## [a-zA-Z_-]+:' $(MAKEFILE_LIST) \
 		| sed 's/## //' \
 		| column -t -s ':'
+
+## app: Start full app (infra + migrate + swagger + run API)
+app: docker-up
+	@echo "→ waiting for postgres..."
+	sleep 5
+	$(MAKE) migrate-up
+	$(MAKE) swagger
+	$(MAKE) build
+	@echo "→ starting API..."
+	APP_ENV=local $(BINARY)
+
+run: swagger build
+	APP_ENV=local $(BINARY)
