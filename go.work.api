@@ -1,0 +1,24 @@
+go 1.25.6
+
+use (
+	./cmd/api
+
+	./internal/app
+	./internal/contract
+	./internal/events
+
+	./internal/modules/moderation
+	./internal/modules/movie
+	./internal/modules/notification
+	./internal/modules/payment
+	./internal/modules/profile
+	./internal/modules/quota
+	./internal/modules/rating
+	./internal/modules/review
+	./internal/modules/social
+	./internal/modules/upload
+	./internal/modules/user
+	./internal/modules/watchlist
+
+	./internal/platform
+)

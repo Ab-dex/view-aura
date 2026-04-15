@@ -1,17 +1,20 @@
 # ── Build stage ────────────────────────────────────────────────────────────────
-FROM golang:1.25-alpine AS builder
+FROM golang:1.25 AS builder
 
 WORKDIR /src
 
-RUN apk add --no-cache gcc musl-dev librdkafka-dev pkgconf
+RUN apt-get update && apt-get install -y \
+    gcc \
+    pkg-config \
+    librdkafka-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY go.work go.work.sum ./
+
+# Worker modules only
 COPY cmd/worker/go.mod cmd/worker/go.sum ./cmd/worker/
 COPY internal/platform/go.mod internal/platform/go.sum ./internal/platform/
 COPY internal/events/go.mod internal/events/go.sum ./internal/events/
-# COPY workflows/upload_pipeline/go.mod    ./workflows/upload_pipeline/
-# COPY workflows/moderation_saga/go.mod    ./workflows/moderation_saga/
-# COPY workflows/enrichment_pipeline/go.mod ./workflows/enrichment_pipeline/
 COPY workflows/go.mod workflows/go.sum ./workflows/
 
 RUN go work sync
@@ -19,16 +22,20 @@ RUN go work sync
 COPY . .
 
 RUN CGO_ENABLED=1 GOOS=linux go build \
-      -ldflags="-s -w -extldflags '-static'" \
-      -o /bin/viewaura-worker \
-      ./cmd/worker
+    -ldflags="-s -w" \
+    -o /bin/viewaura-worker \
+    ./cmd/worker
+
 
 # ── Runtime stage ───────────────────────────────────────────────────────────────
-FROM alpine:3.19
+FROM debian:bookworm-slim
 
-RUN apk add --no-cache ca-certificates tzdata
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    tzdata \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN addgroup -S viewaura && adduser -S viewaura -G viewaura
+RUN useradd -m viewaura
 
 WORKDIR /app
 

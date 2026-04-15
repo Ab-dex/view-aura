@@ -1,6 +1,10 @@
 package domain
 
-import "time"
+import (
+	"time"
+
+	apierror "github.com/Ab-dex/view-aura/internal/platform/error"
+)
 
 // ─── IDs ─────────────────────────────────────────────────────────────────────
 
@@ -48,7 +52,14 @@ func (c ContentRating) String() string {
 	return string(c)
 }
 
-func ParseContentRating(s string) (ContentRating, error)
+func ParseContentRating(s string) (ContentRating, error) {
+	switch s {
+	case "G", "PG", "PG-13", "R", "NC-17", "NR":
+		return ContentRating(s), nil
+	default:
+		return "", apierror.Validation("invalid content rating", map[string]any{"value": s})
+	}
+}
 
 type CreditRole string
 

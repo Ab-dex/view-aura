@@ -130,4 +130,4 @@ func (kp *kafkaProducer) Close() {
 type NoopProducer struct{}
 
 func (NoopProducer) Publish(_ context.Context, _, _ string, _ any) error { return nil }
-func (NoopProducer) Close()
+func (NoopProducer) Close()                                              {}
