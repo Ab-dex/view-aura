@@ -44,6 +44,12 @@ func (c ContentRating) IsValid() bool {
 	}
 }
 
+func (c ContentRating) String() string {
+	return string(c)
+}
+
+func ParseContentRating(s string) (ContentRating, error)
+
 type CreditRole string
 
 const (
