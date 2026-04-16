@@ -44,21 +44,36 @@ type kafkaProducer struct {
 
 // NewProducer creates a confluent-kafka-go producer from config.
 func NewProducer(cfg config.KafkaConfig) (Producer, error) {
+	fmt.Printf("Creating Kafka producer with brokers: %s\n", cfg.SecurityProtocol)
 	cm := kafka.ConfigMap{
 		"bootstrap.servers":  cfg.Brokers,
-		"acks":               "all", // wait for all in-sync replicas
-		"enable.idempotence": true,  // exactly-once producer semantics
+		"acks":               "all",
+		"enable.idempotence": true,
 		"retries":            10,
 		"retry.backoff.ms":   200,
 		"linger.ms":          5,
 		"compression.type":   "snappy",
 		"message.max.bytes":  1048576,
-		"security.protocol":  cfg.SecurityProtocol,
-		"sasl.mechanism":     cfg.SASLMechanism,
-		"sasl.username":      cfg.SASLUsername,
-		"sasl.password":      cfg.SASLPassword,
 	}
+
 	p, err := kafka.NewProducer(&cm)
+
+	// Only set security config if explicitly provided
+	if cfg.SecurityProtocol != "" {
+		cm["security.protocol"] = cfg.SecurityProtocol
+	}
+
+	// Only enable SASL if ALL required fields exist
+	if cfg.SASLMechanism != "" &&
+		cfg.SASLUsername != "" &&
+		cfg.SASLPassword != "" {
+
+		cm["security.protocol"] = cfg.SecurityProtocol // must be SASL_* here
+		cm["sasl.mechanisms"] = cfg.SASLMechanism
+		cm["sasl.username"] = cfg.SASLUsername
+		cm["sasl.password"] = cfg.SASLPassword
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("kafka: new producer: %w", err)
 	}

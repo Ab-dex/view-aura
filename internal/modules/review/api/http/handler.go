@@ -35,13 +35,20 @@ func NewReviewHandler(svc service.ReviewService) *ReviewHandler {
 //	POST /reviews/:id/reports                   — report (auth)
 
 func (h *ReviewHandler) RegisterPublicRoutes(r gin.IRouter) {
-	r.GET("/movies/:movie_id/reviews", h.List)
 	r.GET("/reviews/:id", h.GetByID)
 	r.GET("/users/:user_id/reviews", h.ListByUser)
 }
 
+func (h *ReviewHandler) RegisterPublicMovieRoutes(r gin.IRouter) {
+	r.GET("", h.List)
+
+}
+
+func (h *ReviewHandler) RegisterProtectedMoviesRoutes(r gin.IRouter) {
+	r.POST("", h.Create)
+}
+
 func (h *ReviewHandler) RegisterProtectedRoutes(r gin.IRouter) {
-	r.POST("/movies/:movie_id/reviews", h.Create)
 	r.PATCH("/reviews/:id", h.Update)
 	r.DELETE("/reviews/:id", h.Delete)
 	r.POST("/reviews/:id/reactions", h.React)

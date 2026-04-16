@@ -1,6 +1,6 @@
 module github.com/Ab-dex/view-aura/cmd/worker
 
-go 1.25.6
+go 1.22.0
 
 require (
 	github.com/google/wire v0.7.0

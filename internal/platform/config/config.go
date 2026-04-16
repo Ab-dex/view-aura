@@ -67,7 +67,7 @@ type JWTConfig struct {
 	RefreshTokenTTL time.Duration `mapstructure:"refresh_token_ttl"`
 	Issuer          string        `mapstructure:"issuer"`
 	Method          jwtlib.Method `mapstructure:"method"`
-	Secret          []byte        `mapstructure:"secret"`
+	Secret          string        `mapstructure:"secret"`
 }
 
 type LogConfig struct {
@@ -339,12 +339,13 @@ func validate(cfg *Config) error {
 	if cfg.Redis.Addr == "" {
 		return fmt.Errorf("redis.addr is required")
 	}
-	if cfg.JWT.PrivateKeyPath == "" {
-		return fmt.Errorf("jwt.private_key_path is required")
+
+	if cfg.JWT.Secret == "" {
+		if cfg.JWT.PrivateKeyPath == "" || cfg.JWT.PublicKeyPath == "" {
+			return fmt.Errorf("either jwt.secret or both jwt.private_key_path and jwt.public_key_path must be provided")
+		}
 	}
-	if cfg.JWT.PublicKeyPath == "" {
-		return fmt.Errorf("jwt.public_key_path is required")
-	}
+
 	if cfg.App.Env != "local" && cfg.App.Env != "staging" && cfg.App.Env != "production" {
 		return fmt.Errorf("app.env must be local, staging, or production")
 	}

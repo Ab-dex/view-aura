@@ -30,8 +30,10 @@ func (m *Module) Register(r gin.IRouter) {
 	m.Handler.RegisterProtectedRoutes(protected)
 }
 
-func ProvideNotificationModule(h *handler.NotificationHandler, auth contract.AuthMiddleware) contract.Module {
-	return NewModule(h, gin.HandlerFunc(auth))
+func ProvideNotificationModule(h *handler.NotificationHandler, auth contract.AuthMiddleware) contract.NotificationModule {
+	return contract.NotificationModule{
+		Module: NewModule(h, gin.HandlerFunc(auth)),
+	}
 }
 
 // NotificationModuleSet is the full wire provider set for the notification module.

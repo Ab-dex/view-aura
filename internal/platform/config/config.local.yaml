@@ -1,0 +1,36 @@
+app:
+  name: view-aura
+  env: local
+  shutdown_timeout: 30s
+
+http:
+  port: 8081
+
+db:
+  dsn: postgres://viewaura:viewaura@localhost:5432/viewaura?sslmode=disable
+
+redis:
+  addr: localhost:6379
+
+jwt:
+  # private_key_path: ../../secrets/jwt_private.pem
+  # public_key_path: ../../secrets/jwt_public.pem
+  secret: supersecretkey
+  access_token_ttl: 1h
+  refresh_token_ttl: 720h
+  issuer: https://auth.viewaura.com
+  method: RS256
+
+temporal:
+  host_port: localhost:7233
+  namespace: default
+  task_queue: viewaura-main
+
+kafka:
+  brokers: localhost:29092
+  group_id: viewaura-worker
+  security_protocol: PLAINTEXT
+
+log:
+  level: debug
+  format: console

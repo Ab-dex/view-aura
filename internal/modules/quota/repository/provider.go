@@ -6,8 +6,8 @@ import (
 	sharedcache "github.com/Ab-dex/view-aura/internal/platform/cache"
 )
 
-func provideQuotaRepository(client *sharedcache.Client) QuotaRepository {
+func ProvideQuotaRepository(client *sharedcache.Client) QuotaRepository {
 	return NewQuotaRepository(client)
 }
 
-var ProviderSet = wire.NewSet(provideQuotaRepository)
+var ProviderSet = wire.NewSet(ProvideQuotaRepository)

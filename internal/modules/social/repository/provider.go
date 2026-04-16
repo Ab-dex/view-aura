@@ -7,14 +7,14 @@ import (
 	shareddb "github.com/Ab-dex/view-aura/internal/platform/db"
 )
 
-func provideFollowRepository(pool *shareddb.Pool) FollowRepository {
+func ProvideFollowRepository(pool *shareddb.Pool) FollowRepository {
 	return NewFollowRepository(pool.Pool)
 }
 
-// provideActivityRepository wraps the Postgres implementation with the Redis
+// ProvideActivityRepository wraps the Postgres implementation with the Redis
 // feed cache. The FollowRepository is injected so the cache can fan-out new
 // activities to all follower feeds on write.
-func provideActivityRepository(
+func ProvideActivityRepository(
 	pool *shareddb.Pool,
 	follows FollowRepository,
 	redis *sharedcache.Client,
@@ -23,22 +23,22 @@ func provideActivityRepository(
 	return NewCachedActivityRepository(pg, follows, redis)
 }
 
-func provideThreadRepository(pool *shareddb.Pool) ThreadRepository {
+func ProvideThreadRepository(pool *shareddb.Pool) ThreadRepository {
 	return NewThreadRepository(pool.Pool)
 }
 
-func providePostRepository(pool *shareddb.Pool) PostRepository {
+func ProvidePostRepository(pool *shareddb.Pool) PostRepository {
 	return NewPostRepository(pool.Pool)
 }
 
-func provideChallengeRepository(pool *shareddb.Pool) ChallengeRepository {
+func ProvideChallengeRepository(pool *shareddb.Pool) ChallengeRepository {
 	return NewChallengeRepository(pool.Pool)
 }
 
 var ProviderSet = wire.NewSet(
-	provideFollowRepository,
-	provideActivityRepository,
-	provideThreadRepository,
-	providePostRepository,
-	provideChallengeRepository,
+	ProvideFollowRepository,
+	ProvideActivityRepository,
+	ProvideThreadRepository,
+	ProvidePostRepository,
+	ProvideChallengeRepository,
 )

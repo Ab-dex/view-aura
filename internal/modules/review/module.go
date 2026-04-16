@@ -30,8 +30,10 @@ func (m *Module) Register(r gin.IRouter) {
 	m.Handler.RegisterProtectedRoutes(protected)
 }
 
-func ProvideReviewModule(h *handler.ReviewHandler, auth contract.AuthMiddleware) contract.Module {
-	return NewModule(h, gin.HandlerFunc(auth))
+func ProvideReviewModule(h *handler.ReviewHandler, auth contract.AuthMiddleware) contract.ReviewModule {
+	return contract.ReviewModule{
+		Module: NewModule(h, gin.HandlerFunc(auth)),
+	}
 }
 
 var ReviewModuleSet = wire.NewSet(

@@ -1,6 +1,6 @@
 module github.com/Ab-dex/view-aura/workflows
 
-go 1.25.6
+go 1.22.0
 
 require go.temporal.io/sdk v1.42.0
 

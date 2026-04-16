@@ -6,10 +6,10 @@ import (
 	shareddb "github.com/Ab-dex/view-aura/internal/platform/db"
 )
 
-func provideHouseholdProfileRepository(pool *shareddb.Pool) HouseholdProfileRepository {
+func ProvideHouseholdProfileRepository(pool *shareddb.Pool) HouseholdProfileRepository {
 	return NewHouseholdProfileRepository(pool.Pool)
 }
 
 var ProviderSet = wire.NewSet(
-	provideHouseholdProfileRepository,
+	ProvideHouseholdProfileRepository,
 )

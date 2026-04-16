@@ -12,6 +12,7 @@ var ProviderSet = wire.NewSet(
 	ProvideRecoveryMiddleware,
 	ProvideLoggerMiddleware,
 	NewRouter,
-	ProvideHTTPServer,
+	// ProvideHTTPHandler,
+	// ProvideHTTPServer,
 	New,
 )

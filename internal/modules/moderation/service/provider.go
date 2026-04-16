@@ -6,7 +6,7 @@ import (
 	"github.com/Ab-dex/view-aura/internal/platform/config"
 )
 
-func provideAIClient(cfg *config.Config) AIClient {
+func ProvideAIClient(cfg *config.Config) AIClient {
 	if cfg.ModerationAI.Endpoint == "" {
 		return NoopAIClient{}
 	}
@@ -14,6 +14,6 @@ func provideAIClient(cfg *config.Config) AIClient {
 }
 
 var ProviderSet = wire.NewSet(
-	provideAIClient,
+	ProvideAIClient,
 	NewModerationService,
 )

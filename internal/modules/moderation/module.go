@@ -40,8 +40,10 @@ func ProvideModerationModule(
 	h *handler.ModerationHandler,
 	auth contract.AuthMiddleware,
 	admin contract.AdminMiddleware,
-) contract.Module {
-	return NewModule(h, gin.HandlerFunc(auth), gin.HandlersChain(admin))
+) contract.ModerationModule {
+	return contract.ModerationModule{
+		Module: NewModule(h, gin.HandlerFunc(auth), gin.HandlersChain(admin)),
+	}
 }
 
 var ModerationModuleSet = wire.NewSet(

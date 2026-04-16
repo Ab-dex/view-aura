@@ -1,16 +1,13 @@
 version: "3.9"
 
-# Local development environment.
-# Mirrors production topology without cloud dependencies.
-# Start: docker compose up -d
-# Stop:  docker compose down -v
-
 name: viewaura
 
 volumes:
   postgres_data:
   redis_data:
   kafka_data:
+  zookeeper_data:
+  zookeeper_log:
   temporal_data:
   clickhouse_data:
 
@@ -32,7 +29,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./infrastructure/postgres/migrations:/docker-entrypoint-initdb.d:ro
+      - ./init:/docker-entrypoint-initdb.d:ro   # single mount, init.sql lives here
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U viewaura"]
       interval: 5s
@@ -62,13 +59,21 @@ services:
     networks:
       - viewaura
 
-  # ── Kafka (single broker for local dev) ─────────────────────────────────────
+  # ── Kafka ───────────────────────────────────────────────────────────────────
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.0
     restart: unless-stopped
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME:   2000
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_log:/var/lib/zookeeper/log
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     networks:
       - viewaura
 
@@ -76,7 +81,8 @@ services:
     image: confluentinc/cp-kafka:7.6.0
     restart: unless-stopped
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_healthy
     ports:
       - "9092:9092"
       - "29092:29092"
@@ -100,7 +106,6 @@ services:
     networks:
       - viewaura
 
-  # Topic initialiser — creates all topics on first start.
   kafka-init:
     image: confluentinc/cp-kafka:7.6.0
     depends_on:
@@ -108,23 +113,12 @@ services:
         condition: service_healthy
     entrypoint: ["/bin/sh", "-c"]
     command: |
-      "
-      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic user.events       --partitions 4 --replication-factor 1 &
-      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic movie.events      --partitions 4 --replication-factor 1 &
-      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic ratings           --partitions 8 --replication-factor 1 &
-      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic reviews           --partitions 4 --replication-factor 1 &
-      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic notifications     --partitions 4 --replication-factor 1 &
-      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic search_index      --partitions 4 --replication-factor 1 &
-      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic moderation        --partitions 4 --replication-factor 1 &
-      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic moderation.decided --partitions 4 --replication-factor 1 &
-      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic uploads.completed --partitions 4 --replication-factor 1 &
-      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic uploads.failed    --partitions 4 --replication-factor 1 &
-      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic payment.events    --partitions 4 --replication-factor 1 &
-      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic social.events     --partitions 4 --replication-factor 1 &
-      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic workflow_events   --partitions 4 --replication-factor 1 &
-      wait
-      echo 'All topics created.'
-      "
+      "kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic user.events --partitions 4 --replication-factor 1
+       kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic movie.events --partitions 4 --replication-factor 1
+       kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic ratings --partitions 8 --replication-factor 1
+       kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic notifications --partitions 4 --replication-factor 1
+       kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic workflow_events --partitions 4 --replication-factor 1
+       echo 'All topics created.'"
     networks:
       - viewaura
 
@@ -138,20 +132,33 @@ services:
     ports:
       - "7233:7233"
     environment:
-      DB:                  postgresql
-      DB_PORT:             5432
-      POSTGRES_USER:       viewaura
-      POSTGRES_PWD:        viewaura
-      POSTGRES_SEEDS:      postgres
-      DYNAMIC_CONFIG_FILE_PATH: /etc/temporal/dynamicconfig/docker.yaml
+      - DB=postgres12
+      - DB_PORT=5432
+      - POSTGRES_USER=viewaura
+      - POSTGRES_PWD=viewaura
+      - POSTGRES_SEEDS=postgres
+      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development.yml
     volumes:
-      - temporal_data:/etc/temporal
+      - ./temporal/dynamicconfig:/etc/temporal/config/dynamicconfig
     healthcheck:
-      test: ["CMD", "tctl", "--address", "temporal:7233", "cluster", "health"]
+      test: ["CMD", "temporal", "operator", "cluster", "health", "--address", "temporal:7233"]
       interval: 10s
-      retries: 15
+      timeout: 5s
+      start_period: 0s
+      retries: 10
     networks:
       - viewaura
+
+  # temporal-admin-tools:
+  #   image: temporalio/admin-tools:1.24.1
+  #   depends_on:
+  #     - temporal
+  #   environment:
+  #     - TEMPORAL_ADDRESS=temporal:7233
+  #   stdin_open: true
+  #   tty: true
+  #   networks:
+  #     - viewaura
 
   temporal-ui:
     image: temporalio/ui:2.26.2
@@ -169,15 +176,15 @@ services:
     image: clickhouse/clickhouse-server:24.3-alpine
     restart: unless-stopped
     ports:
-      - "8123:8123"   # HTTP interface
-      - "9000:9000"   # Native client
+      - "8123:8123"
+      - "9000:9000"
     volumes:
       - clickhouse_data:/var/lib/clickhouse
       - ./infrastructure/clickhouse/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
     networks:
       - viewaura
 
-  # ── viewaura API ─────────────────────────────────────────────────────────────
+  # ── API ──────────────────────────────────────────────────────────────────────
   api:
     build:
       context: ../..
@@ -198,7 +205,7 @@ services:
       APP_ENV:           local
       DB_DSN:            postgres://viewaura:viewaura@postgres:5432/viewaura?sslmode=disable
       REDIS_ADDR:        redis:6379
-      KAFKA_BROKERS:     ""         # empty = NoopProducer in local dev
+      KAFKA_BROKERS:     ""
       TEMPORAL_HOST_PORT: temporal:7233
       TEMPORAL_NAMESPACE: default
       JWT_PRIVATE_KEY_PATH: /run/secrets/jwt_private_key
@@ -211,10 +218,13 @@ services:
       R2_SECRET_ACCESS_KEY: placeholder
       LOG_LEVEL:         debug
       LOG_FORMAT:        console
+    volumes:
+      - ./secrets/jwt_private.pem:/run/secrets/jwt_private_key:ro
+      - ./secrets/jwt_public.pem:/run/secrets/jwt_public_key:ro
     networks:
       - viewaura
 
-  # ── viewaura Worker ──────────────────────────────────────────────────────────
+  # ── Worker ───────────────────────────────────────────────────────────────────
   worker:
     build:
       context: ../..

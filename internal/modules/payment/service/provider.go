@@ -9,11 +9,11 @@ import (
 	stripepkg "github.com/Ab-dex/view-aura/internal/platform/stripe"
 )
 
-func provideStripeAdapter(client *stripepkg.Client) StripeAdapter {
+func ProvideStripeAdapter(client *stripepkg.Client) StripeAdapter {
 	return NewStripeAdapter(client)
 }
 
-func provideWebhookService(
+func ProvideWebhookService(
 	subs repository.SubscriptionRepository,
 	invoices repository.InvoiceRepository,
 	idempotency repository.IdempotencyRepository,
@@ -25,7 +25,7 @@ func provideWebhookService(
 }
 
 var ProviderSet = wire.NewSet(
-	provideStripeAdapter,
+	ProvideStripeAdapter,
 	NewPaymentService,
-	provideWebhookService,
+	ProvideWebhookService,
 )

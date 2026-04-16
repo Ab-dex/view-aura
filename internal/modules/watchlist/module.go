@@ -23,17 +23,17 @@ func NewModule(h *handler.WatchlistHandler, auth gin.HandlerFunc) *Module {
 }
 
 func (m *Module) Register(r gin.IRouter) {
-	// Public — list detail by share slug (no auth needed for public lists).
 	m.Handler.RegisterPublicRoutes(r)
 
-	// All write operations and personal watchlist require auth.
 	protected := r.Group("")
 	protected.Use(m.Auth)
 	m.Handler.RegisterProtectedRoutes(protected)
 }
 
-func ProvideWatchlistModule(h *handler.WatchlistHandler, auth contract.AuthMiddleware) contract.Module {
-	return NewModule(h, gin.HandlerFunc(auth))
+func ProvideWatchlistModule(h *handler.WatchlistHandler, auth contract.AuthMiddleware) contract.WatchlistModule {
+	return contract.WatchlistModule{
+		Module: NewModule(h, gin.HandlerFunc(auth)),
+	}
 }
 
 var WatchlistModuleSet = wire.NewSet(

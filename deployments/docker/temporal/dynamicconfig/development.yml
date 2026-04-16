@@ -1,0 +1,8 @@
+limit.maxIDLength:
+  - value: 255
+
+system.forceSearchAttributesCacheRefreshOnRead:
+  - value: true
+
+frontend.enableClientVersionCheck:
+  - value: false

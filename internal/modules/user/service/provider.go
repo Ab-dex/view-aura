@@ -7,11 +7,11 @@ import (
 	"github.com/Ab-dex/view-aura/internal/platform/config"
 )
 
-func provideTokenService(cfg *config.Config, sessions repository.SessionRepository) (TokenService, error) {
+func ProvideTokenService(cfg *config.Config, sessions repository.SessionRepository) (TokenService, error) {
 	return NewTokenService(cfg.JWT, sessions)
 }
 
 var ProviderSet = wire.NewSet(
-	provideTokenService,
+	ProvideTokenService,
 	NewUserService,
 )

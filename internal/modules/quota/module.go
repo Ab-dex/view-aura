@@ -28,8 +28,10 @@ func (m *Module) Register(r gin.IRouter) {
 	m.Handler.RegisterProtectedRoutes(protected)
 }
 
-func ProvideQuotaModule(h *handler.QuotaHandler, auth contract.AuthMiddleware) contract.Module {
-	return NewModule(h, gin.HandlerFunc(auth))
+func ProvideQuotaModule(h *handler.QuotaHandler, auth contract.AuthMiddleware) contract.QuotaModule {
+	return contract.QuotaModule{
+		Module: NewModule(h, gin.HandlerFunc(auth)),
+	}
 }
 
 var QuotaModuleSet = wire.NewSet(

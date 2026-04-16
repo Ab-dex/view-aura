@@ -44,6 +44,17 @@ func ProvideProducer(cfg KafkaConfig) (Producer, error) {
 	)
 }
 
+func ProvideKafkaConfig(cfg *config.Config) KafkaConfig {
+	return KafkaConfig{
+		Brokers:          cfg.Kafka.Brokers,
+		GroupID:          cfg.Kafka.GroupID,
+		SecurityProtocol: cfg.Kafka.SecurityProtocol,
+		SASLMechanism:    cfg.Kafka.SASLMechanism,
+		SASLUsername:     cfg.Kafka.SASLUsername,
+		SASLPassword:     cfg.Kafka.SASLPassword,
+	}
+}
+
 // ProvideConsumer creates a Kafka Consumer from config.
 func ProvideConsumer(cfg KafkaConfig) (Consumer, error) {
 	if err := cfg.Validate(); err != nil {
@@ -54,7 +65,7 @@ func ProvideConsumer(cfg KafkaConfig) (Consumer, error) {
 
 // ProducerSet wires the Kafka producer. Consumer is wired separately only in
 // cmd/worker — the HTTP server does not need a consumer.
-var ProducerSet = wire.NewSet(ProvideProducer)
+var ProducerSet = wire.NewSet(ProvideKafkaConfig, ProvideProducer)
 
 // WorkerProviderSet wires both producer and consumer for cmd/worker.
 var WorkerProviderSet = wire.NewSet(ProvideProducer, ProvideConsumer)

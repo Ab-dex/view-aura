@@ -9,36 +9,36 @@ import (
 
 // provideMovieRepository builds the Postgres impl and wraps it with the Redis
 // read-through cache.  All other repositories are pass-through (no caching).
-func provideMovieRepository(pool *shareddb.Pool, redis *sharedcache.Client) MovieRepository {
+func ProvideMovieRepository(pool *shareddb.Pool, redis *sharedcache.Client) MovieRepository {
 	pg := NewMovieRepository(pool.Pool)
 	return NewCachedMovieRepository(pg, redis)
 }
 
-func provideGenreRepository(pool *shareddb.Pool) GenreRepository {
+func ProvideGenreRepository(pool *shareddb.Pool) GenreRepository {
 	return NewGenreRepository(pool.Pool)
 }
 
-func providePersonRepository(pool *shareddb.Pool) PersonRepository {
+func ProvidePersonRepository(pool *shareddb.Pool) PersonRepository {
 	return NewPersonRepository(pool.Pool)
 }
 
-func provideCreditRepository(pool *shareddb.Pool) CreditRepository {
+func ProvideCreditRepository(pool *shareddb.Pool) CreditRepository {
 	return NewCreditRepository(pool.Pool)
 }
 
-func provideStreamingLinkRepository(pool *shareddb.Pool) StreamingLinkRepository {
+func ProvideStreamingLinkRepository(pool *shareddb.Pool) StreamingLinkRepository {
 	return NewStreamingLinkRepository(pool.Pool)
 }
 
-func provideFilmingLocationRepository(pool *shareddb.Pool) FilmingLocationRepository {
+func ProvideFilmingLocationRepository(pool *shareddb.Pool) FilmingLocationRepository {
 	return NewFilmingLocationRepository(pool.Pool)
 }
 
 var ProviderSet = wire.NewSet(
-	provideMovieRepository,
-	provideGenreRepository,
-	providePersonRepository,
-	provideCreditRepository,
-	provideStreamingLinkRepository,
-	provideFilmingLocationRepository,
+	ProvideMovieRepository,
+	ProvideGenreRepository,
+	ProvidePersonRepository,
+	ProvideCreditRepository,
+	ProvideStreamingLinkRepository,
+	ProvideFilmingLocationRepository,
 )

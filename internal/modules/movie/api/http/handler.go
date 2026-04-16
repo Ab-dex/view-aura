@@ -23,12 +23,12 @@ func NewMovieHandler(svc service.MovieService) *MovieHandler {
 func (h *MovieHandler) RegisterRoutes(r gin.IRouter) {
 	r.GET("", h.List)
 	r.GET("/genres", h.ListGenres)
-	r.GET("/:id_or_slug", h.Get)
-	r.GET("/:id_or_slug/credits", h.ListCredits)
-	r.GET("/:id_or_slug/streaming", h.ListStreamingLinks)
-	r.GET("/:id_or_slug/locations", h.ListFilmingLocations)
-	r.GET("/people/:id_or_slug", h.GetPerson)
-	r.GET("/people/:id_or_slug/filmography", h.GetFilmography)
+	r.GET("/:id", h.Get)
+	r.GET("/:id/credits", h.ListCredits)
+	r.GET("/:id/streaming", h.ListStreamingLinks)
+	r.GET("/:id/locations", h.ListFilmingLocations)
+	r.GET("/people/:id", h.GetPerson)
+	r.GET("/people/:id/filmography", h.GetFilmography)
 	r.GET("/people/search", h.SearchPeople)
 }
 

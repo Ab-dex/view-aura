@@ -32,8 +32,10 @@ func (m *Module) Register(r gin.IRouter) {
 	m.Handler.RegisterProtectedRoutes(protected)
 }
 
-func ProvideSocialModule(h *handler.SocialHandler, auth contract.AuthMiddleware) contract.Module {
-	return NewModule(h, gin.HandlerFunc(auth))
+func ProvideSocialModule(h *handler.SocialHandler, auth contract.AuthMiddleware) contract.SocialModule {
+	return contract.SocialModule{
+		Module: NewModule(h, gin.HandlerFunc(auth)),
+	}
 }
 
 var SocialModuleSet = wire.NewSet(

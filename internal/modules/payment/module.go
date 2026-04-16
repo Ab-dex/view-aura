@@ -33,8 +33,10 @@ func (m *Module) Register(r gin.IRouter) {
 	m.Handler.RegisterProtectedRoutes(protected)
 }
 
-func ProvidePaymentModule(h *handler.PaymentHandler, auth contract.AuthMiddleware) contract.Module {
-	return NewModule(h, gin.HandlerFunc(auth))
+func ProvidePaymentModule(h *handler.PaymentHandler, auth contract.AuthMiddleware) contract.PaymentModule {
+	return contract.PaymentModule{
+		Module: NewModule(h, gin.HandlerFunc(auth)),
+	}
 }
 
 var PaymentModuleSet = wire.NewSet(

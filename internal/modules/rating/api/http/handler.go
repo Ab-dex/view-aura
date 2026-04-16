@@ -22,7 +22,6 @@ func NewRatingHandler(svc service.RatingService) *RatingHandler {
 }
 
 // RegisterRoutes attaches rating routes.
-// All routes are protected — callers must apply Auth middleware before calling.
 //
 //	PUT  /movies/:movie_id/rating        — upsert own rating
 //	DELETE /movies/:movie_id/rating      — delete own rating
@@ -30,16 +29,25 @@ func NewRatingHandler(svc service.RatingService) *RatingHandler {
 //	GET  /movies/:movie_id/ratings       — list all ratings (public)
 //	GET  /movies/:movie_id/ratings/stats — aggregated stats (public)
 //	GET  /users/:user_id/ratings         — user's rating history (public)
-func (h *RatingHandler) RegisterPublicRoutes(r gin.IRouter) {
-	r.GET("/movies/:movie_id/ratings", h.ListByMovie)
-	r.GET("/movies/:movie_id/ratings/stats", h.GetStats)
+func (h *RatingHandler) RegisterPublicMovieRatingRoutes(r gin.IRouter) {
+	r.GET("", h.ListByMovie)
+	r.GET("/stats", h.GetStats)
+}
+
+func (h *RatingHandler) RegisterPublicUserRatingRoutes(r gin.IRouter) {
 	r.GET("/users/:user_id/ratings", h.ListByUser)
 }
 
+// func (h *RatingHandler) RegisterPublicRoutes(r gin.IRouter) {
+// 	r.GET("/movies/:movie_id/ratings", h.ListByMovie)
+// 	r.GET("/movies/:movie_id/ratings/stats", h.GetStats)
+// 	r.GET("/users/:user_id/ratings", h.ListByUser)
+// }
+
 func (h *RatingHandler) RegisterProtectedRoutes(r gin.IRouter) {
-	r.PUT("/movies/:movie_id/rating", h.Upsert)
-	r.DELETE("/movies/:movie_id/rating", h.Delete)
-	r.GET("/movies/:movie_id/rating", h.GetMine)
+	r.PUT("", h.Upsert)
+	r.DELETE("", h.Delete)
+	r.GET("", h.GetMine)
 }
 
 // ─── DTOs ─────────────────────────────────────────────────────────────────────

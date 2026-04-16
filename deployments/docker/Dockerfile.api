@@ -60,6 +60,7 @@ RUN useradd -m viewaura
 WORKDIR /app
 
 COPY --from=builder /bin/viewaura-api /app/viewaura-api
+COPY --from=builder /src/internal/platform/config /app/config
 
 USER viewaura
 

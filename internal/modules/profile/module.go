@@ -40,8 +40,10 @@ func (m *Module) Register(r gin.IRouter) {
 func ProvideProfileModule(
 	handler *handler.ProfileHandler,
 	auth contract.AuthMiddleware,
-) contract.Module {
-	return NewModule(handler, gin.HandlerFunc(auth))
+) contract.ProfileModule {
+	return contract.ProfileModule{
+		Module: NewModule(handler, gin.HandlerFunc(auth)),
+	}
 }
 
 // ProfileModuleSet bundles all dependencies for Google Wire

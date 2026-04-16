@@ -1,14 +1,12 @@
 package app
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-
-	// Side-effect import: registers the generated docs with the swagger runtime.
-	// _ "github.com/Ab-dex/view-aura/docs"
 
 	"github.com/Ab-dex/view-aura/internal/contract"
 	"github.com/Ab-dex/view-aura/internal/platform/cache"
@@ -29,9 +27,24 @@ func New(
 	cfg *config.Config,
 	db *db.Pool,
 	redis *cache.Client,
-	server *http.Server,
+	router *gin.Engine,
 	modules []contract.Module,
 ) (*App, error) {
+	// Register all module routes onto the router before wrapping in http.Server
+	api := router.Group("/api/v1")
+	fmt.Printf("All modules: %v", modules)
+	for _, m := range modules {
+		m.Register(api)
+	}
+
+	server := &http.Server{
+		Addr:         cfg.HTTP.Host + ":" + fmt.Sprintf("%d", cfg.HTTP.Port),
+		Handler:      router,
+		ReadTimeout:  cfg.HTTP.ReadTimeout,
+		WriteTimeout: cfg.HTTP.WriteTimeout,
+		IdleTimeout:  cfg.HTTP.IdleTimeout,
+	}
+
 	return &App{
 		Config:  cfg,
 		DB:      db,
@@ -44,7 +57,6 @@ func New(
 
 func NewRouter(
 	cfg *config.Config,
-	modules []contract.Module,
 	reqID contract.RequestIDMiddleware,
 	log contract.LoggerMiddleware,
 	recover contract.RecoveryMiddleware,
@@ -63,22 +75,12 @@ func NewRouter(
 		})
 	})
 
-	// ── Swagger UI ────────────────────────────────────────────────────────────
-	// Exposed on local and staging only. Never in production — it reveals
-	// the full API surface and is not rate-limited.
 	if cfg.App.Env != "production" {
-		// GET /swagger/index.html  → interactive Swagger UI
-		// GET /swagger/doc.json    → raw OpenAPI JSON (useful for code-gen tools)
 		r.GET("/swagger/*any", ginSwagger.WrapHandler(
 			swaggerFiles.Handler,
 			ginSwagger.URL("/swagger/doc.json"),
-			ginSwagger.DefaultModelsExpandDepth(-1), // collapse schema models by default
+			ginSwagger.DefaultModelsExpandDepth(-1),
 		))
-	}
-
-	api := r.Group("/api/v1")
-	for _, m := range modules {
-		m.Register(api)
 	}
 
 	return r

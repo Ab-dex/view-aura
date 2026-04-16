@@ -59,7 +59,6 @@ func (h *SocialHandler) RegisterPublicRoutes(r gin.IRouter) {
 	r.GET("/users/:user_id/following", h.ListFollowing)
 	r.GET("/users/:user_id/follow-stats", h.FollowStats)
 	r.GET("/users/:user_id/activity", h.UserActivity)
-	r.GET("/movies/:movie_id/threads", h.ListThreads)
 	r.GET("/threads/:id", h.GetThread)
 	r.GET("/threads/:id/posts", h.ListPosts)
 	r.GET("/posts/:id/replies", h.ListReplies)
@@ -68,12 +67,20 @@ func (h *SocialHandler) RegisterPublicRoutes(r gin.IRouter) {
 	r.GET("/challenges/:id/leaderboard", h.Leaderboard)
 }
 
+func (h *SocialHandler) RegisterPublicMovieRoutes(r gin.IRouter) {
+	r.GET("/threads", h.ListThreads)
+
+}
+
+func (h *SocialHandler) RegisterProtectedMovieRoutes(r gin.IRouter) {
+	r.POST("/threads", h.CreateThread)
+}
+
 func (h *SocialHandler) RegisterProtectedRoutes(r gin.IRouter) {
 	r.POST("/users/:user_id/follow", h.Follow)
 	r.DELETE("/users/:user_id/follow", h.Unfollow)
 	r.GET("/users/:user_id/follow-status", h.FollowStatus)
 	r.GET("/me/feed", h.Feed)
-	r.POST("/movies/:movie_id/threads", h.CreateThread)
 	r.DELETE("/threads/:id", h.DeleteThread)
 	r.POST("/threads/:id/posts", h.CreatePost)
 	r.DELETE("/posts/:id", h.DeletePost)

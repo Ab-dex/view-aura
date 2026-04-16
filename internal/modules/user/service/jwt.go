@@ -40,13 +40,33 @@ type tokenService struct {
 func NewTokenService(cfg config.JWTConfig, sessions repository.SessionRepository) (TokenService, error) {
 	// 1. You MUST pass the Type [*Claims] to jwtlib.New
 	// 2. Pass the config directly
-	signer, err := jwtlib.New[*Claims](jwtlib.Config{
-		Method:         jwtlib.Method(cfg.Method),
-		Secret:         []byte(cfg.Secret),
-		PrivateKeyPath: cfg.PrivateKeyPath,
-		PublicKeyPath:  cfg.PublicKeyPath,
-		Issuer:         cfg.Issuer,
-	})
+	fmt.Printf("Initializing JWT signer with config: %+v\n", cfg)
+	var signer jwtlib.Signer[*Claims]
+	var err error
+
+	hasSecret := cfg.Secret != ""
+	hasKeys := cfg.PrivateKeyPath != "" && cfg.PublicKeyPath != ""
+
+	switch {
+	case hasSecret:
+		signer, err = jwtlib.New[*Claims](jwtlib.Config{
+			Method: jwtlib.HS256, // or map from cfg.Method safely
+			Secret: []byte(cfg.Secret),
+			Issuer: cfg.Issuer,
+		})
+
+	case hasKeys:
+		signer, err = jwtlib.New[*Claims](jwtlib.Config{
+			Method:         jwtlib.RS256,
+			PrivateKeyPath: cfg.PrivateKeyPath,
+			PublicKeyPath:  cfg.PublicKeyPath,
+			Issuer:         cfg.Issuer,
+		})
+
+	default:
+		return nil, fmt.Errorf("either jwt.secret or both jwt.private_key_path and jwt.public_key_path must be provided")
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("token service: init signer: %w", err)
 	}

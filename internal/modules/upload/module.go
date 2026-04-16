@@ -28,8 +28,10 @@ func (m *Module) Register(r gin.IRouter) {
 	m.Handler.RegisterProtectedRoutes(protected)
 }
 
-func ProvideUploadModule(h *handler.UploadHandler, auth contract.AuthMiddleware) contract.Module {
-	return NewModule(h, gin.HandlerFunc(auth))
+func ProvideUploadModule(h *handler.UploadHandler, auth contract.AuthMiddleware) contract.UploadModule {
+	return contract.UploadModule{
+		Module: NewModule(h, gin.HandlerFunc(auth)),
+	}
 }
 
 var UploadModuleSet = wire.NewSet(

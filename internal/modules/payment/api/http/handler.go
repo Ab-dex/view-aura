@@ -48,7 +48,12 @@ func (h *PaymentHandler) RegisterProtectedRoutes(r gin.IRouter) {
 	r.GET("/me/invoices", h.ListInvoices)
 	r.POST("/me/pay-per-view", h.PayPerView)
 	r.GET("/me/licenses", h.GetLicenses)
-	r.GET("/movies/:movie_id/access", h.CheckAccess)
+}
+
+func (h *PaymentHandler) RegisterProtectedMovieRoutes(r gin.IRouter) {
+	// Movie-related payment routes (e.g. checking access) would be registered here.
+	// For example:
+	r.GET("", h.CheckAccess)
 }
 
 // ─── DTOs ─────────────────────────────────────────────────────────────────────
