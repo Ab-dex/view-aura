@@ -1,3 +1,7 @@
+//go:build wireinject
+
+// *build wireinject
+
 package main
 
 import (
@@ -7,50 +11,49 @@ import (
 
 	"github.com/Ab-dex/view-aura/internal/app"
 	"github.com/Ab-dex/view-aura/internal/contract"
-	"github.com/Ab-dex/view-aura/internal/events"
-	"github.com/Ab-dex/view-aura/internal/modules/moderation"
-	"github.com/Ab-dex/view-aura/internal/modules/movie"
-	"github.com/Ab-dex/view-aura/internal/modules/notification"
+	events "github.com/Ab-dex/view-aura/internal/events"
+	moderation "github.com/Ab-dex/view-aura/internal/modules/moderation"
+	movie "github.com/Ab-dex/view-aura/internal/modules/movie"
+	notification "github.com/Ab-dex/view-aura/internal/modules/notification"
 	notifservice "github.com/Ab-dex/view-aura/internal/modules/notification/service"
-	"github.com/Ab-dex/view-aura/internal/modules/payment"
-	"github.com/Ab-dex/view-aura/internal/modules/quota"
-	"github.com/Ab-dex/view-aura/internal/modules/rating"
-	"github.com/Ab-dex/view-aura/internal/modules/review"
-	"github.com/Ab-dex/view-aura/internal/modules/social"
-	"github.com/Ab-dex/view-aura/internal/modules/upload"
-	"github.com/Ab-dex/view-aura/internal/modules/user"
-	"github.com/Ab-dex/view-aura/internal/modules/watchlist"
+	payment "github.com/Ab-dex/view-aura/internal/modules/payment"
+	quota "github.com/Ab-dex/view-aura/internal/modules/quota"
+	rating "github.com/Ab-dex/view-aura/internal/modules/rating"
+	review "github.com/Ab-dex/view-aura/internal/modules/review"
+	social "github.com/Ab-dex/view-aura/internal/modules/social"
+	upload "github.com/Ab-dex/view-aura/internal/modules/upload"
+	user "github.com/Ab-dex/view-aura/internal/modules/user"
+	watchlist "github.com/Ab-dex/view-aura/internal/modules/watchlist"
 	"github.com/Ab-dex/view-aura/internal/platform/config"
-	"github.com/Ab-dex/view-aura/internal/platform/r2"
+	r2 "github.com/Ab-dex/view-aura/internal/platform/r2"
 	stripeclient "github.com/Ab-dex/view-aura/internal/platform/stripe"
-	"github.com/Ab-dex/view-aura/internal/platform/temporal"
 )
 
 func ProvideModules(
-	userMod contract.Module,
-	movieMod contract.Module,
-	ratingMod contract.Module,
-	reviewMod contract.Module,
-	watchlistMod contract.Module,
-	socialMod contract.Module,
-	notifMod contract.Module,
-	paymentMod contract.Module,
-	uploadMod contract.Module,
-	quotaMod contract.Module,
-	moderationMod contract.Module,
+	userMod contract.UserModule,
+	movieMod contract.MovieModule,
+	ratingMod contract.RatingModule,
+	reviewMod contract.ReviewModule,
+	watchlistMod contract.WatchlistModule,
+	socialMod contract.SocialModule,
+	notifMod contract.NotificationModule,
+	paymentMod contract.PaymentModule,
+	uploadMod contract.UploadModule,
+	quotaMod contract.QuotaModule,
+	moderationMod contract.ModerationModule,
 ) []contract.Module {
 	return []contract.Module{
-		userMod,
-		movieMod,
-		ratingMod,
-		reviewMod,
-		watchlistMod,
-		socialMod,
-		notifMod,
-		paymentMod,
-		uploadMod,
-		quotaMod,
-		moderationMod,
+		userMod.Module,
+		movieMod.Module,
+		ratingMod.Module,
+		reviewMod.Module,
+		watchlistMod.Module,
+		socialMod.Module,
+		notifMod.Module,
+		paymentMod.Module,
+		uploadMod.Module,
+		quotaMod.Module,
+		moderationMod.Module,
 	}
 }
 
@@ -75,7 +78,7 @@ func InitializeApp(ctx context.Context, cfg *config.Config) (*app.App, error) {
 		// ── Platform extensions ───────────────────────────────────────────────
 		stripeclient.ProviderSet,
 		r2.ProviderSet,
-		temporal.ProviderSet,
+		// temporal.ProviderSet,
 		events.ProducerSet,
 
 		// Feature modules — each module's ProviderSet is listed here so the
@@ -93,7 +96,7 @@ func InitializeApp(ctx context.Context, cfg *config.Config) (*app.App, error) {
 		moderation.ModerationModuleSet,
 
 		ProvideAdminMiddleware,
-		wire.Bind(new(notifservice.Dispatcher), new(*notifservice.NoopDispatcher)),
+		// wire.Bind(new(notifservice.Dispatcher), new(*notifservice.NoopDispatcher)),
 		ProvideNoopDispatcher,
 
 		// Module aggregator — converts the individual contract.Module bindings
