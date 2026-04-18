@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/Ab-dex/view-aura/internal/app/middleware"
 	"github.com/Ab-dex/view-aura/internal/modules/user/domain"
 	"github.com/Ab-dex/view-aura/internal/modules/user/service"
 	apierror "github.com/Ab-dex/view-aura/internal/platform/error"
@@ -27,9 +28,9 @@ func NewUserHandler(svc service.UserService) *UserHandler {
 // Prefix is typically /api/v1/users  (applied by the caller).
 func (h *UserHandler) RegisterRoutes(r gin.IRouter) {
 	// Public
-	r.POST("/register", h.Register)
-	r.POST("/login", h.Login)
-	r.POST("/refresh", h.RefreshTokens)
+	r.POST("/register", middleware.StrictRateLimit(10, time.Minute), h.Register)
+	r.POST("/login", middleware.StrictRateLimit(10, time.Minute), h.Login)
+	r.POST("/refresh", middleware.StrictRateLimit(10, time.Minute), h.RefreshTokens)
 }
 
 func (h *UserHandler) RegisterProtectedRoutes(r gin.IRouter) {
@@ -37,7 +38,7 @@ func (h *UserHandler) RegisterProtectedRoutes(r gin.IRouter) {
 	r.POST("/logout", h.Logout)
 	r.POST("/logout/all", h.LogoutAll)
 	r.GET("/me/sessions", h.ListSessions)
-	r.DELETE("/me/sessions/:session_id", h.RevokeSession)
+	r.DELETE("/me/sessions/:session_id", middleware.StrictRateLimit(10, time.Minute), h.RevokeSession)
 
 	// Account Management (The "User" entity)
 	// Rename /me/profile to /me/account to distinguish from Household Profiles

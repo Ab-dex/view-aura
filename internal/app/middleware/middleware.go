@@ -1,10 +1,15 @@
 package middleware
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
+	"net/http"
 	"strings"
 	"time"
+
+	goredis "github.com/redis/go-redis/v9"
 
 	"github.com/Ab-dex/view-aura/internal/modules/user/service"
 	apierror "github.com/Ab-dex/view-aura/internal/platform/error"
@@ -198,4 +203,89 @@ func newRequestID() string {
 	b := make([]byte, 8)
 	_, _ = rand.Read(b)
 	return hex.EncodeToString(b)
+}
+
+type rateLimitConfig struct {
+	limit  int
+	window time.Duration
+}
+
+const rateLimitOverrideKey = "rate_limit_override"
+
+// RateLimit is the global Gin rate limit middleware applied at router level.
+func RateLimit(rdb *goredis.Client, defaultLimit int, window time.Duration) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		cfg := rateLimitConfig{limit: defaultLimit, window: window}
+
+		// Check for route-level override set by StrictRateLimit or RelaxedRateLimit.
+		if override, exists := c.Get(rateLimitOverrideKey); exists {
+			cfg = override.(rateLimitConfig)
+		}
+
+		ip := c.ClientIP()
+		key := fmt.Sprintf("rate_limit:%s:%s", ip, c.FullPath())
+
+		allowed, remaining, err := allow(c.Request.Context(), rdb, key, cfg.limit, cfg.window)
+		if err != nil {
+			// Redis unavailable — fail open.
+			c.Next()
+			return
+		}
+
+		c.Header("X-RateLimit-Remaining", fmt.Sprintf("%d", remaining))
+
+		if !allowed {
+			c.Header("Retry-After", "60")
+			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
+				"error": gin.H{
+					"code":    "TOO_MANY_REQUESTS",
+					"message": "rate limit exceeded",
+				},
+			})
+			return
+		}
+		c.Next()
+	}
+}
+
+// StrictRateLimit overrides the global limit for a specific route.
+// Place before your handler:
+//
+//	r.POST("/users/login", middleware.StrictRateLimit(10, time.Minute), handler.Login)
+func StrictRateLimit(limit int, window time.Duration) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set(rateLimitOverrideKey, rateLimitConfig{limit: limit, window: window})
+		c.Next()
+	}
+}
+
+// allow is the Redis sliding window check — same Lua script as the gateway.
+func allow(ctx context.Context, rdb *goredis.Client, key string, limit int, window time.Duration) (bool, int, error) {
+	now := time.Now().UnixNano()
+	script := goredis.NewScript(`
+		local key        = KEYS[1]
+		local now        = tonumber(ARGV[1])
+		local window     = tonumber(ARGV[2])
+		local limit      = tonumber(ARGV[3])
+		local clearBefore = now - window
+
+		redis.call("ZREMRANGEBYSCORE", key, "-inf", clearBefore)
+		local count = redis.call("ZCARD", key)
+
+		if count < limit then
+			redis.call("ZADD", key, now, now)
+			redis.call("PEXPIRE", key, math.ceil(window / 1000000))
+			return {1, limit - count - 1}
+		end
+		return {0, 0}
+	`)
+
+	result, err := script.Run(ctx, rdb, []string{key},
+		now, window.Nanoseconds(), limit,
+	).Slice()
+	if err != nil {
+		return false, 0, err
+	}
+
+	return result[0].(int64) == 1, int(result[1].(int64)), nil
 }

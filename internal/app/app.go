@@ -3,11 +3,13 @@ package app
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
+	"github.com/Ab-dex/view-aura/internal/app/middleware"
 	"github.com/Ab-dex/view-aura/internal/contract"
 	"github.com/Ab-dex/view-aura/internal/platform/cache"
 	"github.com/Ab-dex/view-aura/internal/platform/config"
@@ -57,6 +59,7 @@ func New(
 
 func NewRouter(
 	cfg *config.Config,
+	redis *cache.Client,
 	reqID contract.RequestIDMiddleware,
 	log contract.LoggerMiddleware,
 	recover contract.RecoveryMiddleware,
@@ -65,6 +68,8 @@ func NewRouter(
 	r.Use(gin.HandlerFunc(recover))
 	r.Use(gin.HandlerFunc(reqID))
 	r.Use(gin.HandlerFunc(log))
+	r.Use(middleware.RateLimit(redis.Client, 1000, time.Minute))
+	r.Use(middleware.HTTPCache(redis, 2*time.Minute))
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{

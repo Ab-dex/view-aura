@@ -116,7 +116,7 @@ func main() {
 
 	srvErr := make(chan error, 1)
 	go func() {
-		srvErr <- a.Server.ListenAndServe()
+		srvErr <- a.Run()
 	}()
 
 	select {
@@ -129,10 +129,7 @@ func main() {
 	case <-ctx.Done():
 		log.Info().Msg("shutdown signal received — draining connections")
 
-		shutCtx, cancel := context.WithTimeout(context.Background(), cfg.App.ShutdownTimeout)
-		defer cancel()
-
-		if err := a.Server.Shutdown(shutCtx); err != nil {
+		if err := a.Shutdown(context.Background()); err != nil {
 			log.Error().Err(err).Msg("graceful shutdown error")
 			os.Exit(1)
 		}

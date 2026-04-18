@@ -1,9 +1,12 @@
 package user
 
 import (
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
 
+	"github.com/Ab-dex/view-aura/internal/app/middleware"
 	"github.com/Ab-dex/view-aura/internal/contract"
 	profileapi "github.com/Ab-dex/view-aura/internal/modules/profile/api"
 	profilehandler "github.com/Ab-dex/view-aura/internal/modules/profile/api/http"
@@ -28,6 +31,7 @@ func NewModule(h *handler.UserHandler, ph *profilehandler.ProfileHandler, auth g
 
 func (m *Module) Register(r gin.IRouter) {
 	userGroup := r.Group("/users")
+	userGroup.Use(middleware.StrictRateLimit(100, time.Minute))
 	m.Handler.RegisterRoutes(userGroup)
 
 	protected := userGroup.Group("")

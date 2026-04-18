@@ -131,4 +131,9 @@ func (c *movieCache) invalidate(ctx context.Context, keySuffixes ...string) {
 	for _, s := range keySuffixes {
 		_ = c.client.Del(ctx, sharedcache.MovieMetaKey(s)).Err()
 	}
+
+	keys, err := c.client.Keys(ctx, "http:GET:*movies*").Result()
+	if err == nil && len(keys) > 0 {
+		_ = c.client.Del(ctx, keys...).Err()
+	}
 }

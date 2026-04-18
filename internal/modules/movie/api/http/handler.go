@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/Ab-dex/view-aura/internal/app/middleware"
 	"github.com/Ab-dex/view-aura/internal/modules/movie/domain"
 	"github.com/Ab-dex/view-aura/internal/modules/movie/service"
 	apierror "github.com/Ab-dex/view-aura/internal/platform/error"
@@ -21,14 +22,14 @@ func NewMovieHandler(svc service.MovieService) *MovieHandler {
 }
 
 func (h *MovieHandler) RegisterRoutes(r gin.IRouter) {
-	r.GET("", h.List)
-	r.GET("/genres", h.ListGenres)
+	r.GET("", middleware.CacheFor(5*time.Minute), h.List)
+	r.GET("/genres", middleware.CacheFor(1*time.Hour), h.ListGenres)
 	r.GET("/:id", h.Get)
-	r.GET("/:id/credits", h.ListCredits)
-	r.GET("/:id/streaming", h.ListStreamingLinks)
-	r.GET("/:id/locations", h.ListFilmingLocations)
-	r.GET("/people/:id", h.GetPerson)
-	r.GET("/people/:id/filmography", h.GetFilmography)
+	r.GET("/:id/credits", middleware.CacheFor(10*time.Minute), h.ListCredits)
+	r.GET("/:id/streaming", middleware.CacheFor(6*time.Hour), h.ListStreamingLinks)
+	r.GET("/:id/locations", middleware.CacheFor(24*time.Hour), h.ListFilmingLocations)
+	r.GET("/people/:id", middleware.CacheFor(10*time.Minute), h.GetPerson)
+	r.GET("/people/:id/filmography", middleware.CacheFor(1*time.Hour), h.GetFilmography)
 	r.GET("/people/search", h.SearchPeople)
 }
 
