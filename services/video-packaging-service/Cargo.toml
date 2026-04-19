@@ -1,0 +1,61 @@
+[package]
+name        = "video-packaging-service"
+version     = "0.1.0"
+edition     = "2021"
+description = "ViewAura video packaging service — HLS/DASH transcoding, thumbnails, metadata via FFmpeg"
+
+[[bin]]
+name = "video-packaging-service"
+path = "src/main.rs"
+
+[dependencies]
+# Async runtime
+tokio       = { version = "1", features = ["full", "process"] }
+
+# HTTP server (lightweight — this is an internal service, not public)
+axum        = { version = "0.7", features = ["json", "multipart"] }
+tower-http  = { version = "0.5", features = ["trace", "request-id", "timeout"] }
+tower       = "0.5"
+
+# FFmpeg bindings — wraps the system libavcodec/libavformat
+# Requires: apt install ffmpeg libavcodec-dev libavformat-dev libavfilter-dev
+#           OR pre-built ffmpeg binary on PATH (used via Command for simpler builds)
+# We use Command-based subprocess invocation (not the Rust bindings) for
+# maximum FFmpeg version compatibility and simpler cross-compilation.
+# The ffmpeg-next crate is listed but feature-gated — enable when stable.
+
+# AWS SDK for R2 (S3-compatible)
+aws-sdk-s3  = { version = "1.40", features = ["behavior-version-latest"] }
+aws-config  = { version = "1.5", features = ["behavior-version-latest"] }
+aws-credential-types = "1.2"
+
+# Serialisation
+serde       = { version = "1", features = ["derive"] }
+serde_json  = "1"
+
+# Config
+config      = "0.14"
+dotenvy     = "0.15"
+
+# Observability
+tracing            = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Utilities
+uuid        = { version = "1", features = ["v4"] }
+chrono      = { version = "0.4", features = ["serde"] }
+anyhow      = "1"
+thiserror   = "1"
+tempfile    = "3"
+tokio-util  = { version = "0.7", features = ["io"] }
+bytes       = "1"
+
+[dev-dependencies]
+axum-test   = "0.3"
+tokio-test  = "0.4"
+
+[profile.release]
+opt-level     = 3
+lto           = true
+codegen-units = 1
+strip         = "symbols"
