@@ -30,10 +30,10 @@ func (h *MovieHandler) swaggerList() {}
 //	             and filming locations. Accepts either a UUID or a URL slug.
 //	@Tags        Movies
 //	@Produce     json
-//	@Param       id_or_slug path string true "Movie UUID or slug (e.g. the-godfather-1972)"
+//	@Param       id path string true "Movie UUID or slug (e.g. the-godfather-1972)"
 //	@Success     200 {object} movieDetailResponse
 //	@Failure     404 {object} errorResponse
-//	@Router      /movies/{id_or_slug} [get]
+//	@Router      /movies/{id} [get]
 func (h *MovieHandler) swaggerGet() {}
 
 // Create godoc
@@ -106,10 +106,10 @@ func (h *MovieHandler) swaggerListGenres() {}
 //	             with the person's profile data.
 //	@Tags        Movies
 //	@Produce     json
-//	@Param       id_or_slug path string true "Movie UUID or slug"
+//	@Param       id path string true "Movie UUID or slug"
 //	@Success     200 {object} creditListResponse
 //	@Failure     404 {object} errorResponse
-//	@Router      /movies/{id_or_slug}/credits [get]
+//	@Router      /movies/{id}/credits [get]
 func (h *MovieHandler) swaggerListCredits() {}
 
 // AddCredit godoc
@@ -151,11 +151,11 @@ func (h *MovieHandler) swaggerRemoveCredit() {}
 //	@Description Returns where-to-watch data for a movie, filtered by region.
 //	@Tags        Movies
 //	@Produce     json
-//	@Param       id_or_slug path   string true  "Movie UUID or slug"
+//	@Param       id path   string true  "Movie UUID or slug"
 //	@Param       region     query  string false "ISO-3166 alpha-2 region code (e.g. US, NG)"
 //	@Success     200 {object} streamingLinkListResponse
 //	@Failure     404 {object} errorResponse
-//	@Router      /movies/{id_or_slug}/streaming [get]
+//	@Router      /movies/{id}/streaming [get]
 func (h *MovieHandler) swaggerListStreamingLinks() {}
 
 // UpsertStreamingLink godoc
@@ -183,10 +183,10 @@ func (h *MovieHandler) swaggerUpsertStreamingLink() {}
 //	@Description Returns a cast or crew member's profile. Accepts UUID or slug.
 //	@Tags        People
 //	@Produce     json
-//	@Param       id_or_slug path string true "Person UUID or slug"
+//	@Param       id path string true "Person UUID or slug"
 //	@Success     200 {object} personResponse
 //	@Failure     404 {object} errorResponse
-//	@Router      /movies/people/{id_or_slug} [get]
+//	@Router      /movies/people/{id} [get]
 func (h *MovieHandler) swaggerGetPerson() {}
 
 // GetFilmography godoc
@@ -195,10 +195,10 @@ func (h *MovieHandler) swaggerGetPerson() {}
 //	@Description Returns all movie credits for a person.
 //	@Tags        People
 //	@Produce     json
-//	@Param       id_or_slug path string true "Person UUID or slug"
+//	@Param       id path string true "Person UUID or slug"
 //	@Success     200 {object} filmographyResponse
 //	@Failure     404 {object} errorResponse
-//	@Router      /movies/people/{id_or_slug}/filmography [get]
+//	@Router      /movies/people/{id}/filmography [get]
 func (h *MovieHandler) swaggerGetFilmography() {}
 
 // SearchPeople godoc
