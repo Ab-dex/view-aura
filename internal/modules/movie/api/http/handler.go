@@ -1,6 +1,9 @@
 package httpapi
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
+	"encoding/json"
 	"net/http"
 	"time"
 
@@ -204,23 +207,25 @@ func (h *MovieHandler) List(c *gin.Context) {
 		movies = append(movies, toMovieResponse(m))
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	resp := gin.H{
 		"movies": movies,
 		"total":  result.Total,
 		"limit":  result.Limit,
 		"offset": result.Offset,
-	})
+	}
+
+	// ✅ ETag here too
+	respondWithETag(c, resp)
 }
 
 func (h *MovieHandler) Get(c *gin.Context) {
-	idOrSlug := c.Param("id_or_slug")
+	idOrSlug := c.Param("id")
 
 	var (
 		detail *service.MovieDetail
 		err    error
 	)
 
-	// Try by ID first (UUID format), fall back to slug.
 	if len(idOrSlug) == 36 {
 		detail, err = h.svc.GetByID(c.Request.Context(), domain.MovieID(idOrSlug))
 	} else {
@@ -232,7 +237,10 @@ func (h *MovieHandler) Get(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, toMovieDetailResponse(detail))
+	resp := toMovieDetailResponse(detail)
+
+	// ✅ Use UpdatedAt-based ETag
+	respondWithLastModifiedETag(c, detail.Movie.UpdatedAt, resp)
 }
 
 func (h *MovieHandler) Create(c *gin.Context) {
@@ -335,20 +343,30 @@ func (h *MovieHandler) ListGenres(c *gin.Context) {
 		respondError(c, err)
 		return
 	}
+
 	type genreResp struct {
 		ID   string `json:"id"`
 		Name string `json:"name"`
 		Slug string `json:"slug"`
 	}
+
 	out := make([]genreResp, 0, len(genres))
 	for _, g := range genres {
-		out = append(out, genreResp{ID: string(g.ID), Name: g.Name, Slug: g.Slug})
+		out = append(out, genreResp{
+			ID:   string(g.ID),
+			Name: g.Name,
+			Slug: g.Slug,
+		})
 	}
-	c.JSON(http.StatusOK, gin.H{"genres": out})
+
+	resp := gin.H{"genres": out}
+
+	// ✅ ETag
+	respondWithETag(c, resp)
 }
 
 func (h *MovieHandler) ListCredits(c *gin.Context) {
-	idOrSlug := c.Param("id_or_slug")
+	idOrSlug := c.Param("id")
 
 	var movieID domain.MovieID
 	if len(idOrSlug) == 36 {
@@ -405,7 +423,7 @@ func (h *MovieHandler) RemoveCredit(c *gin.Context) {
 }
 
 func (h *MovieHandler) ListStreamingLinks(c *gin.Context) {
-	idOrSlug := c.Param("id_or_slug")
+	idOrSlug := c.Param("id")
 	region := c.DefaultQuery("region", "")
 
 	detail, err := h.getMovieByIDOrSlug(c, idOrSlug)
@@ -458,7 +476,7 @@ func (h *MovieHandler) DeleteStreamingLink(c *gin.Context) {
 }
 
 func (h *MovieHandler) ListFilmingLocations(c *gin.Context) {
-	detail, err := h.getMovieByIDOrSlug(c, c.Param("id_or_slug"))
+	detail, err := h.getMovieByIDOrSlug(c, c.Param("id"))
 	if err != nil {
 		respondError(c, err)
 		return
@@ -519,7 +537,7 @@ func (h *MovieHandler) DeleteFilmingLocation(c *gin.Context) {
 }
 
 func (h *MovieHandler) GetPerson(c *gin.Context) {
-	idOrSlug := c.Param("id_or_slug")
+	idOrSlug := c.Param("id")
 	var (
 		person *domain.Person
 		err    error
@@ -537,7 +555,7 @@ func (h *MovieHandler) GetPerson(c *gin.Context) {
 }
 
 func (h *MovieHandler) GetFilmography(c *gin.Context) {
-	idOrSlug := c.Param("id_or_slug")
+	idOrSlug := c.Param("id")
 	var (
 		person *domain.Person
 		err    error
@@ -739,4 +757,52 @@ func orSlice(s []string) []string {
 		return []string{}
 	}
 	return s
+}
+
+// ─── ETag Helpers ─────────────────────────────────────────────────────────────
+
+// generateETag creates a stable hash for any response payload
+func generateETag(v any) (string, []byte, error) {
+	data, err := json.Marshal(v)
+	if err != nil {
+		return "", nil, err
+	}
+
+	hash := sha1.Sum(data)
+	etag := `"` + hex.EncodeToString(hash[:]) + `"`
+
+	return etag, data, nil
+}
+
+// respondWithETag handles If-None-Match logic
+func respondWithETag(c *gin.Context, payload any) {
+	etag, data, err := generateETag(payload)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+
+	clientETag := c.GetHeader("If-None-Match")
+
+	if clientETag == etag {
+		c.Status(http.StatusNotModified)
+		return
+	}
+
+	c.Header("ETag", etag)
+	c.Data(http.StatusOK, "application/json", data)
+}
+
+// respondWithLastModifiedETag uses UpdatedAt as ETag
+func respondWithLastModifiedETag(c *gin.Context, updatedAt time.Time, payload any) {
+	etag := `"` + updatedAt.UTC().Format(time.RFC3339Nano) + `"`
+
+	clientETag := c.GetHeader("If-None-Match")
+	if clientETag == etag {
+		c.Status(http.StatusNotModified)
+		return
+	}
+
+	c.Header("ETag", etag)
+	c.JSON(http.StatusOK, payload)
 }
