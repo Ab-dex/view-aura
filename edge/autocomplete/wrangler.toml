@@ -1,0 +1,31 @@
+name            = "viewaura-autocomplete"
+main            = "index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# Route — intercepts all autocomplete requests before they reach the origin
+[[routes]]
+pattern = "viewaura.com/api/v1/search/suggest*"
+zone_name = "viewaura.com"
+
+# KV namespace — stores pre-computed autocomplete results
+# Populated by the Rust search-service SearchSuggestCacheWarmRequested handler
+[[kv_namespaces]]
+binding  = "SUGGEST_CACHE"
+id       = "replace_with_kv_namespace_id"
+preview_id = "replace_with_preview_kv_namespace_id"
+
+[vars]
+ENVIRONMENT       = "production"
+# Origin to fall back to on KV miss
+SEARCH_ORIGIN     = "https://api-us.viewaura.com"
+# Cache TTL in seconds for KV entries
+KV_TTL_SECS       = "60"
+# Minimum prefix length to serve (shorter = too many results, too broad)
+MIN_PREFIX_LENGTH = "2"
+# Maximum suggestions to return
+MAX_SUGGESTIONS   = "8"
+
+# Secrets (set via: wrangler secret put SEARCH_API_KEY)
+# [secrets]
+# SEARCH_API_KEY — internal API key forwarded to the search service

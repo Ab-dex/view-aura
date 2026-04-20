@@ -1,0 +1,29 @@
+name            = "viewaura-bot-detection"
+main            = "index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# Runs on every request — must be extremely fast (<2ms overhead target)
+[[routes]]
+pattern   = "viewaura.com/*"
+zone_name = "viewaura.com"
+
+[[kv_namespaces]]
+binding    = "RATE_LIMIT"
+id         = "replace_with_kv_namespace_id"
+preview_id = "replace_with_preview_kv_namespace_id"
+
+[vars]
+ENVIRONMENT             = "production"
+# Requests per minute for unauthenticated IPs
+UNAUTH_RATE_LIMIT       = "100"
+# Requests per minute for authenticated users
+AUTH_RATE_LIMIT         = "1000"
+# KV window TTL (seconds) — sliding window duration
+RATE_WINDOW_SECS        = "60"
+# Bot score threshold (0–100): above this → block
+BOT_SCORE_THRESHOLD     = "30"
+# Whether to challenge (Cloudflare Turnstile) instead of hard-block borderline bots
+CHALLENGE_BORDERLINE    = "true"
+# Paths exempt from rate limiting (comma-separated prefixes)
+EXEMPT_PATHS            = "/api/v1/webhook/,/health"

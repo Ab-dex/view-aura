@@ -1,0 +1,34 @@
+name            = "viewaura-geo-routing"
+main            = "index.ts"
+compatibility_date = "2024-09-23"
+
+[[routes]]
+pattern   = "viewaura.com/*"
+zone_name = "viewaura.com"
+
+[[kv_namespaces]]
+# Stores origin health status: key = region name, value = "healthy" | "unhealthy"
+# Updated by the health-check Cron Trigger below
+binding    = "ORIGIN_HEALTH"
+id         = "replace_with_kv_namespace_id"
+preview_id = "replace_with_preview_kv_namespace_id"
+
+# Health-check cron — runs every 30 seconds
+# (Minimum Cloudflare cron interval is 1 minute; use an external ping for 30s)
+[[triggers]]
+crons = ["* * * * *"]   # every minute
+
+[vars]
+ENVIRONMENT          = "production"
+# Origins per region
+ORIGIN_US            = "https://api-us.viewaura.com"
+ORIGIN_EU            = "https://api-eu.viewaura.com"
+ORIGIN_AP            = "https://api-ap.viewaura.com"
+# Fallback origin when all regionals are unhealthy
+ORIGIN_FALLBACK      = "https://api-us.viewaura.com"
+# Health check path
+HEALTH_PATH          = "/health"
+# Health check timeout (ms)
+HEALTH_TIMEOUT_MS    = "3000"
+# Minimum healthy response time (ms) — slower than this marks region as degraded
+DEGRADED_THRESHOLD_MS = "500"

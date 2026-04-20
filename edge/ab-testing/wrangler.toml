@@ -1,0 +1,25 @@
+name            = "viewaura-ab-testing"
+main            = "index.ts"
+compatibility_date = "2024-09-23"
+
+[[routes]]
+pattern   = "viewaura.com/*"
+zone_name = "viewaura.com"
+
+# KV — stores experiment assignments: key = {user_id|session_id}:{experiment_id}
+# Value = "a" | "b" | "control"
+[[kv_namespaces]]
+binding    = "AB_ASSIGNMENTS"
+id         = "replace_with_kv_namespace_id"
+preview_id = "replace_with_preview_kv_namespace_id"
+
+[vars]
+ENVIRONMENT           = "production"
+# Assignment TTL (seconds) — 30 days ensures sticky assignment
+ASSIGNMENT_TTL_SECS   = "2592000"
+# Cookie name used to carry the session ID for unauthenticated users
+SESSION_COOKIE        = "__va_sid"
+# Cookie max-age (seconds) = 30 days
+SESSION_COOKIE_MAXAGE = "2592000"
+# Whether to inject experiment assignments as response headers (for debugging)
+DEBUG_HEADERS         = "false"

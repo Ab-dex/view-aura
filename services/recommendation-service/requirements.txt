@@ -1,0 +1,29 @@
+# ── Web framework ────────────────────────────────────────────────────────────
+fastapi==0.111.1
+uvicorn[standard]==0.30.1
+pydantic==2.8.2
+pydantic-settings==2.3.4
+
+# ── ML / AI ───────────────────────────────────────────────────────────────────
+torch==2.3.1
+numpy==1.26.4
+scikit-learn==1.5.1          # cosine similarity, ALS matrix factorization
+sentence-transformers==3.0.1  # all-MiniLM-L6-v2 for mood embeddings (384-dim)
+
+# ── Kafka consumer ────────────────────────────────────────────────────────────
+aiokafka==0.11.0             # async Kafka client (no rdkafka C dep needed)
+
+# ── Redis feature store ───────────────────────────────────────────────────────
+redis[asyncio]==5.0.7
+msgpack==1.0.8               # compact vector serialisation (vs JSON)
+
+# ── HTTP client ───────────────────────────────────────────────────────────────
+httpx==0.27.0
+
+# ── Observability ─────────────────────────────────────────────────────────────
+structlog==24.2.0
+prometheus-fastapi-instrumentator==7.0.0
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+tenacity==8.5.0
+python-multipart==0.0.9

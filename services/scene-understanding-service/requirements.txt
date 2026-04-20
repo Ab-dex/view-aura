@@ -1,0 +1,36 @@
+# Web framework
+fastapi==0.111.1
+uvicorn[standard]==0.30.1
+pydantic==2.8.2
+pydantic-settings==2.3.4
+
+# CLIP — vision-language scene embedding
+# openai-clip is the reference implementation; open_clip_torch is more maintained
+open-clip-torch==2.26.1
+torch==2.3.1
+torchvision==0.18.1
+
+# Whisper — speech-to-text for chapter/dialogue detection
+openai-whisper==20231117
+
+# Frame extraction via OpenCV (faster than subprocess ffmpeg for sampling)
+opencv-python-headless==4.10.0.84
+
+# Audio processing
+librosa==0.10.2            # spectral analysis for scene change detection
+soundfile==0.12.1
+
+# Numpy / scipy
+numpy==1.26.4
+scipy==1.13.1
+
+# HTTP client (frame/audio download from R2 presigned URLs)
+httpx==0.27.0
+
+# Observability
+structlog==24.2.0
+prometheus-fastapi-instrumentator==7.0.0
+
+# Utilities
+pydantic-settings==2.3.4
+python-multipart==0.0.9

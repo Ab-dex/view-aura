@@ -1,0 +1,17 @@
+fastapi==0.111.1
+uvicorn[standard]==0.30.1
+pydantic==2.8.2
+pydantic-settings==2.3.4
+
+# Image processing — invisible watermark embedding via DCT steganography
+Pillow==10.4.0
+numpy==1.26.4
+scipy==1.13.1         # DCT transforms for frequency-domain embedding
+opencv-python-headless==4.10.0.84
+
+# Video frame extraction and re-encoding (subprocess ffmpeg)
+httpx==0.27.0
+
+structlog==24.2.0
+prometheus-fastapi-instrumentator==7.0.0
+python-multipart==0.0.9

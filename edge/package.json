@@ -1,0 +1,25 @@
+{
+  "name": "@viewaura/edge-workers",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ViewAura Cloudflare Workers — edge layer",
+  "workspaces": [
+    "autocomplete",
+    "bot-detection",
+    "geo-routing",
+    "ab-testing"
+  ],
+  "scripts": {
+    "typecheck":    "tsc --noEmit --project tsconfig.json",
+    "deploy:all":   "npm run deploy -w autocomplete -w bot-detection -w geo-routing -w ab-testing",
+    "dev:autocomplete":  "wrangler dev autocomplete/index.ts --config autocomplete/wrangler.toml",
+    "dev:bot":           "wrangler dev bot-detection/index.ts --config bot-detection/wrangler.toml",
+    "dev:geo":           "wrangler dev geo-routing/index.ts --config geo-routing/wrangler.toml",
+    "dev:ab":            "wrangler dev ab-testing/index.ts --config ab-testing/wrangler.toml"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240909.0",
+    "typescript":                "^5.5.3",
+    "wrangler":                  "^3.70.0"
+  }
+}
