@@ -18,47 +18,32 @@ import (
 
 // UploadService is the interface for all upload business operations.
 type UploadService interface {
-	// Initiate checks quota, generates a presigned R2 URL, creates a session in
-	// Redis, and publishes an UploadInitiated event for quota reservation.
-	// Returns the session including the presigned URL — the client uploads directly
-	// to R2 using this URL without going through the API server again.
 	Initiate(ctx context.Context, cmd domain.InitiateUploadCmd) (*domain.UploadSession, error)
-
-	// GetProgress returns the current session state for the caller.
-	// Used by the client to poll upload status and show a progress indicator.
 	GetProgress(ctx context.Context, uploadID, userID string) (*domain.UploadSession, error)
-
-	// Complete is called by the client after the file has fully landed in R2.
-	// It creates the persistent MediaAsset row and publishes UploadCompleted,
-	// which triggers the Temporal upload_pipeline workflow.
 	Complete(ctx context.Context, cmd domain.CompleteUploadCmd) (*domain.MediaAsset, error)
-
-	// Abort cancels an in-flight upload, deletes the partial R2 object, and
-	// publishes UploadFailed so the quota service can release reserved storage.
 	Abort(ctx context.Context, cmd domain.AbortUploadCmd) error
-
-	// GetAsset returns a completed media asset by ID.
 	GetAsset(ctx context.Context, assetID, userID string) (*domain.MediaAsset, error)
-
-	// ListMyAssets returns all media assets belonging to the caller.
 	ListMyAssets(ctx context.Context, userID string, limit, offset int) ([]*domain.MediaAsset, int, error)
 }
-
-// ─── Implementation ───────────────────────────────────────────────────────────
 
 type uploadService struct {
 	sessions repository.UploadSessionRepository
 	assets   repository.MediaAssetRepository
 	quota    quotasvc.QuotaService
-	r2       *r2pkg.Client
+	// r2 accepts r2.ObjectStore so either *r2.Client (real) or
+	// *ResilientR2Client (three-tier fallback) can be injected.
+	r2       r2pkg.ObjectStore
 	producer events.Producer
 }
 
+// NewUploadService constructs the service.
+// r2 is typed as r2pkg.ObjectStore — inject *ResilientR2Client via Wire for
+// automatic three-tier R2 fallback, or *r2pkg.Client directly in tests.
 func NewUploadService(
 	sessions repository.UploadSessionRepository,
 	assets repository.MediaAssetRepository,
 	quota quotasvc.QuotaService,
-	r2 *r2pkg.Client,
+	r2 r2pkg.ObjectStore,
 	producer events.Producer,
 ) UploadService {
 	return &uploadService{
@@ -73,7 +58,6 @@ func NewUploadService(
 // ─── Initiate ─────────────────────────────────────────────────────────────────
 
 func (s *uploadService) Initiate(ctx context.Context, cmd domain.InitiateUploadCmd) (*domain.UploadSession, error) {
-	// 1. Quota check — reject before generating any URL.
 	result, err := s.quota.CheckUploadAllowed(ctx, cmd.UserID, cmd.SizeBytes)
 	if err != nil {
 		return nil, err
@@ -82,16 +66,18 @@ func (s *uploadService) Initiate(ctx context.Context, cmd domain.InitiateUploadC
 		return nil, apierror.New(403, apierror.Code(result.DenialCode), result.DenialMsg)
 	}
 
-	// 2. Generate R2 object key and presigned PUT URL.
 	uploadID := uuid.New().String()
 	assetKey := fmt.Sprintf("uploads/%s/%s/%s", cmd.UserID, uploadID, cmd.FileName)
 
+	// PresignPutObject degrades automatically via ResilientR2Client:
+	//   Tier 1: R2 presigned URL
+	//   Tier 2: local temp path URL
+	//   Tier 3: hard 503 (no silent data loss)
 	presignedURL, err := s.r2.PresignPutObject(ctx, assetKey, cmd.ContentType)
 	if err != nil {
-		return nil, apierror.UpstreamError("r2", err)
+		return nil, err // ResilientR2Client already mapped this to apierror
 	}
 
-	// 3. Create session in Redis.
 	now := time.Now()
 	session := &domain.UploadSession{
 		ID:           uploadID,
@@ -111,7 +97,6 @@ func (s *uploadService) Initiate(ctx context.Context, cmd domain.InitiateUploadC
 		return nil, err
 	}
 
-	// 4. Publish UploadInitiated so quota service reserves storage.
 	_ = s.producer.Publish(ctx, events.TopicUploadInitiated, "upload.initiated", events.UploadInitiated{
 		UploadID:    uploadID,
 		UserID:      cmd.UserID,
@@ -124,11 +109,9 @@ func (s *uploadService) Initiate(ctx context.Context, cmd domain.InitiateUploadC
 	logger.FromContext(ctx).Info().
 		Str("upload_id", uploadID).
 		Str("user_id", cmd.UserID).
-		Str("file", cmd.FileName).
 		Int64("size_bytes", cmd.SizeBytes).
 		Msg("upload: session initiated")
 
-	// Return the session with the presigned URL so the client can begin uploading.
 	stored.PresignedURL = presignedURL
 	return stored, nil
 }
@@ -157,12 +140,10 @@ func (s *uploadService) Complete(ctx context.Context, cmd domain.CompleteUploadC
 		return nil, apierror.Forbidden("upload session belongs to another user")
 	}
 
-	// Idempotent — if the asset was already created return it.
 	if existing, err := s.assets.GetByUploadID(ctx, cmd.UploadID); err == nil && existing != nil {
 		return existing, nil
 	}
 
-	// Create the durable asset row.
 	asset := &domain.MediaAsset{
 		ID:          uuid.New().String(),
 		UploadID:    cmd.UploadID,
@@ -177,13 +158,10 @@ func (s *uploadService) Complete(ctx context.Context, cmd domain.CompleteUploadC
 		return nil, err
 	}
 
-	// Update session status.
 	_ = s.sessions.UpdateStatus(ctx, cmd.UploadID, domain.StatusCompleted)
-
-	// Record quota usage now that the bytes have landed.
 	_ = s.quota.RecordUpload(ctx, cmd.UserID, session.SizeBytes)
 
-	// Publish UploadCompleted → triggers upload_pipeline Temporal workflow.
+	// Publish UploadCompleted — ResilientProducer handles Kafka fallback.
 	_ = s.producer.Publish(ctx, events.TopicUploadCompleted, "upload.completed", events.UploadCompleted{
 		UploadID:    cmd.UploadID,
 		AssetID:     created.ID,
@@ -197,8 +175,7 @@ func (s *uploadService) Complete(ctx context.Context, cmd domain.CompleteUploadC
 	logger.FromContext(ctx).Info().
 		Str("upload_id", cmd.UploadID).
 		Str("asset_id", created.ID).
-		Str("user_id", cmd.UserID).
-		Msg("upload: completed — pipeline triggered")
+		Msg("upload: completed")
 
 	return created, nil
 }
@@ -214,7 +191,7 @@ func (s *uploadService) Abort(ctx context.Context, cmd domain.AbortUploadCmd) er
 		return apierror.Forbidden("upload session belongs to another user")
 	}
 
-	// Best-effort R2 deletion — partial uploads must be cleaned up.
+	// Best-effort deletion — ResilientR2Client logs failures rather than panicking.
 	if deleteErr := s.r2.DeleteObject(ctx, session.AssetKey); deleteErr != nil {
 		logger.FromContext(ctx).Warn().
 			Err(deleteErr).
@@ -222,7 +199,6 @@ func (s *uploadService) Abort(ctx context.Context, cmd domain.AbortUploadCmd) er
 			Msg("upload: R2 delete failed on abort — orphaned object may remain")
 	}
 
-	// Publish UploadFailed so quota service can release reserved storage.
 	_ = s.producer.Publish(ctx, events.TopicUploadFailed, "upload.failed", events.UploadFailed{
 		UploadID:    cmd.UploadID,
 		UserID:      cmd.UserID,

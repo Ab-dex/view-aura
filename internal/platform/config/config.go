@@ -24,6 +24,10 @@ type Config struct {
 	Gateway      GatewayConfig      `mapstructure:"gateway"`
 	Auth         AuthConfig         `mapstructure:"auth"`
 	EmailClient  EmailConfig        `mapstructure:"email_client"`
+	// Resilience controls the three-tier degradation behaviour for every
+	// external dependency (Kafka, email, push, Stripe, Temporal, R2).
+	// All fields have safe defaults — existing deployments need no changes.
+	Resilience ResilienceConfig `mapstructure:"resilience"`
 }
 
 // ─── Existing config types (unchanged) ───────────────────────────────────────
@@ -103,35 +107,27 @@ type AppleOAuth struct {
 
 // ─── New config types ─────────────────────────────────────────────────────────
 
-// StripeConfig holds Stripe payment credentials.
 type StripeConfig struct {
 	SecretKey     string `mapstructure:"secret_key"`
 	WebhookSecret string `mapstructure:"webhook_secret"`
-
-	// Price IDs from the Stripe dashboard — set once per environment.
 	PriceIDPro    string `mapstructure:"price_id_pro"`
 	PriceIDStudio string `mapstructure:"price_id_studio"`
 }
 
-// R2Config holds Cloudflare R2 object storage credentials.
 type R2Config struct {
-	AccountID       string `mapstructure:"account_id"`
-	Bucket          string `mapstructure:"bucket"`
-	AccessKeyID     string `mapstructure:"access_key_id"`
-	SecretAccessKey string `mapstructure:"secret_access_key"`
-	// PresignTTL is how long presigned upload/download URLs remain valid.
-	// Defaults to 15 minutes if zero.
-	PresignTTL time.Duration `mapstructure:"presign_ttl"`
+	AccountID       string        `mapstructure:"account_id"`
+	Bucket          string        `mapstructure:"bucket"`
+	AccessKeyID     string        `mapstructure:"access_key_id"`
+	SecretAccessKey string        `mapstructure:"secret_access_key"`
+	PresignTTL      time.Duration `mapstructure:"presign_ttl"`
 }
 
-// TemporalConfig holds Temporal workflow server connection details.
 type TemporalConfig struct {
-	HostPort  string `mapstructure:"host_port"`  // e.g. "temporal:7233"
-	Namespace string `mapstructure:"namespace"`  // e.g. "viewaura"
-	TaskQueue string `mapstructure:"task_queue"` // e.g. "viewaura-main"
+	HostPort  string `mapstructure:"host_port"`
+	Namespace string `mapstructure:"namespace"`
+	TaskQueue string `mapstructure:"task_queue"`
 }
 
-// KafkaConfig holds Apache Kafka broker and producer/consumer settings.
 type KafkaConfig struct {
 	Brokers          string `mapstructure:"brokers"`
 	GroupID          string `mapstructure:"group_id"`
@@ -141,138 +137,27 @@ type KafkaConfig struct {
 	SASLPassword     string `mapstructure:"sasl_password"`
 }
 
-// TracingConfig holds OpenTelemetry exporter settings.
-//
-// config.yaml example:
-//
-//	tracing:
-//	  endpoint:        "otel-collector:4317"   # OTLP gRPC endpoint; empty = no-op
-//	  service_name:    "viewaura-api"
-//	  service_version: "1.0.0"
-//	  environment:     "production"
-//	  sample_rate:     0.1                      # 10% of successful requests
 type TracingConfig struct {
-	// Endpoint is the OTLP gRPC address of the collector.
-	// Leave empty to disable tracing (no-op provider used).
-	Endpoint string `mapstructure:"endpoint"`
-
-	// ServiceName is the logical name of this service in traces.
-	ServiceName string `mapstructure:"service_name"`
-
-	// ServiceVersion is embedded in every span for deployment correlation.
-	ServiceVersion string `mapstructure:"service_version"`
-
-	// Environment is "local" | "staging" | "production".
-	Environment string `mapstructure:"environment"`
-
-	// SampleRate controls what fraction of successful traces are exported.
-	// 0.1 = 10% (PRD spec). Errors are always sampled (ParentBased sampler).
-	// Range: 0.0–1.0. Defaults to 0.1 when zero.
-	SampleRate float64 `mapstructure:"sample_rate"`
+	Endpoint       string  `mapstructure:"endpoint"`
+	ServiceName    string  `mapstructure:"service_name"`
+	ServiceVersion string  `mapstructure:"service_version"`
+	Environment    string  `mapstructure:"environment"`
+	SampleRate     float64 `mapstructure:"sample_rate"`
 }
 
-// ModerationAIConfig configures the Python moderation-ai service client.
 type ModerationAIConfig struct {
-	// Endpoint is the base URL of the Python moderation-ai service.
-	// Leave empty to use the NoopAIClient (always approves — for local dev).
 	Endpoint string `mapstructure:"endpoint"`
 }
 
-// GatewayConfig configures the lightweight Go API gateway used in local
-// development and integration tests. In production this role is fulfilled
-// by Kong; these settings are ignored when Kong is the entry point.
-//
-// config.yaml example:
-//
-//	gateway:
-//	  addr:           ":8000"
-//	  upstream_url:   "http://cinemaos-api:8080"
-//	  allowed_origins:
-//	    - "https://cinemaos.com"
-//	    - "https://www.cinemaos.com"
-//	  rate_limit_rpm: 1000
-//	  skip_auth_paths:
-//	    - "/api/v1/users/register"
-//	    - "/api/v1/users/login"
-//	    - "/api/v1/users/refresh"
-//	    - "/api/v1/movies"
-//	    - "/api/v1/movies/genres"
-//	    - "/api/v1/webhook/stripe"
 type GatewayConfig struct {
-	// Addr is the listen address for the gateway server.
-	// Defaults to ":8000".
-	Addr string `mapstructure:"addr"`
-
-	// UpstreamURL is the base URL of the monolith API service the gateway
-	// proxies to. Defaults to "http://cinemaos-api:8080".
-	UpstreamURL string `mapstructure:"upstream_url"`
-
-	// AllowedOrigins is the list of exact CORS origins the gateway permits.
-	// The wildcard "*" is intentionally not supported to prevent
-	// credential-bearing cross-site requests.
+	Addr           string   `mapstructure:"addr"`
+	UpstreamURL    string   `mapstructure:"upstream_url"`
 	AllowedOrigins []string `mapstructure:"allowed_origins"`
-
-	// RateLimitRPM is the sliding-window rate limit applied per client IP,
-	// expressed as requests per minute. Defaults to 100 for unauthenticated
-	// and 1000 for authenticated callers.
-	RateLimitRPM int `mapstructure:"rate_limit_rpm"`
-
-	// SkipAuthPaths is the list of URL path prefixes that bypass JWT
-	// validation. Stripe webhooks and public read endpoints belong here.
-	SkipAuthPaths []string `mapstructure:"skip_auth_paths"`
+	RateLimitRPM   int      `mapstructure:"rate_limit_rpm"`
+	SkipAuthPaths  []string `mapstructure:"skip_auth_paths"`
 }
 
-// ─── Defaults and helpers ─────────────────────────────────────────────────────
-
-func setTracingDefaults(cfg *Config) {
-	if cfg.Tracing.ServiceName == "" {
-		cfg.Tracing.ServiceName = cfg.App.Name
-	}
-	if cfg.Tracing.Environment == "" {
-		cfg.Tracing.Environment = cfg.App.Env
-	}
-	if cfg.Tracing.SampleRate == 0 {
-		cfg.Tracing.SampleRate = 0.1
-	}
-}
-
-func setGatewayDefaults(cfg *Config) {
-	if cfg.Gateway.Addr == "" {
-		cfg.Gateway.Addr = ":8000"
-	}
-	if cfg.Gateway.UpstreamURL == "" {
-		cfg.Gateway.UpstreamURL = "http://cinemaos-api:8080"
-	}
-	if cfg.Gateway.RateLimitRPM == 0 {
-		cfg.Gateway.RateLimitRPM = 100
-	}
-	if len(cfg.Gateway.AllowedOrigins) == 0 {
-		cfg.Gateway.AllowedOrigins = []string{
-			"http://localhost:3000",
-			"http://localhost:5173",
-		}
-	}
-	if len(cfg.Gateway.SkipAuthPaths) == 0 {
-		cfg.Gateway.SkipAuthPaths = []string{
-			"/api/v1/users/register",
-			"/api/v1/users/login",
-			"/api/v1/users/refresh",
-			"/api/v1/movies",
-			"/api/v1/movies/genres",
-			"/api/v1/webhook/stripe",
-		}
-	}
-}
-
-// ─── Lifecycle ────────────────────────────────────────────────────────────────
-
-func LoadConfig(cfg *Config) error {
-	setDefaults(cfg)
-	if err := validate(cfg); err != nil {
-		return fmt.Errorf("config validation failed: %w", err)
-	}
-	return nil
-}
+// ─── Defaults ─────────────────────────────────────────────────────────────────
 
 func setDefaults(cfg *Config) {
 	if cfg.App.Name == "" {
@@ -354,18 +239,105 @@ func setDefaults(cfg *Config) {
 		cfg.Kafka.GroupID = "viewaura-worker"
 	}
 
+	// Auth base URL defaults per environment.
+	if cfg.Auth.BaseURL == "" {
+		if cfg.App.Env == "local" {
+			cfg.Auth.BaseURL = "http://localhost:3000"
+		} else {
+			cfg.Auth.BaseURL = "https://viewaura.com"
+		}
+	}
+
 	setTracingDefaults(cfg)
 	setGatewayDefaults(cfg)
+	setResilienceDefaults(cfg)
+}
+
+func setResilienceDefaults(cfg *Config) {
+	if cfg.Resilience.LogDir == "" {
+		cfg.Resilience.LogDir = "logs"
+	}
+	if cfg.Resilience.EmailServiceURL == "" {
+		// In local dev the email service is typically not running.
+		// Leave empty — mailer degrades to Redis/file outbox silently.
+	}
+	if cfg.Resilience.TemporalDeferredKey == "" {
+		cfg.Resilience.TemporalDeferredKey = "outbox:temporal:deferred"
+	}
+	if cfg.Resilience.StripePendingKey == "" {
+		cfg.Resilience.StripePendingKey = "outbox:payment:pending"
+	}
+	if cfg.Resilience.PushOutboxKeyPrefix == "" {
+		cfg.Resilience.PushOutboxKeyPrefix = "outbox:push:"
+	}
+	if cfg.Resilience.R2TempUploadDir == "" {
+		cfg.Resilience.R2TempUploadDir = "/tmp/viewaura-uploads"
+	}
+	if cfg.Resilience.R2TempMaxBytes == 0 {
+		cfg.Resilience.R2TempMaxBytes = 500 * 1024 * 1024 // 500 MB
+	}
+}
+
+func setTracingDefaults(cfg *Config) {
+	if cfg.Tracing.ServiceName == "" {
+		cfg.Tracing.ServiceName = cfg.App.Name
+	}
+	if cfg.Tracing.Environment == "" {
+		cfg.Tracing.Environment = cfg.App.Env
+	}
+	if cfg.Tracing.SampleRate == 0 {
+		cfg.Tracing.SampleRate = 0.1
+	}
+}
+
+func setGatewayDefaults(cfg *Config) {
+	if cfg.Gateway.Addr == "" {
+		cfg.Gateway.Addr = ":8000"
+	}
+	if cfg.Gateway.UpstreamURL == "" {
+		cfg.Gateway.UpstreamURL = "http://cinemaos-api:8080"
+	}
+	if cfg.Gateway.RateLimitRPM == 0 {
+		cfg.Gateway.RateLimitRPM = 100
+	}
+	if len(cfg.Gateway.AllowedOrigins) == 0 {
+		cfg.Gateway.AllowedOrigins = []string{
+			"http://localhost:3000",
+			"http://localhost:5173",
+		}
+	}
+	if len(cfg.Gateway.SkipAuthPaths) == 0 {
+		cfg.Gateway.SkipAuthPaths = []string{
+			"/api/v1/users/register",
+			"/api/v1/users/login",
+			"/api/v1/users/refresh",
+			"/api/v1/movies",
+			"/api/v1/movies/genres",
+			"/api/v1/webhook/stripe",
+		}
+	}
+}
+
+// ─── Lifecycle ────────────────────────────────────────────────────────────────
+
+func LoadConfig(cfg *Config) error {
+	setDefaults(cfg)
+	if err := validate(cfg); err != nil {
+		return fmt.Errorf("config validation failed: %w", err)
+	}
+	return nil
 }
 
 func validate(cfg *Config) error {
+	// Database is the only hard requirement — the app cannot function without it.
 	if cfg.DB.DSN == "" {
 		return fmt.Errorf("db.dsn is required")
 	}
-	if cfg.Redis.Addr == "" {
-		return fmt.Errorf("redis.addr is required")
-	}
 
+	// Redis is optional — absence means the app runs in degraded mode.
+	// No error is returned; ProvideRedis returns nil and all components guard.
+
+	// JWT signing must be configured.
 	if cfg.JWT.Secret == "" {
 		if cfg.JWT.PrivateKeyPath == "" || cfg.JWT.PublicKeyPath == "" {
 			return fmt.Errorf("either jwt.secret or both jwt.private_key_path and jwt.public_key_path must be provided")
@@ -375,5 +347,6 @@ func validate(cfg *Config) error {
 	if cfg.App.Env != "local" && cfg.App.Env != "staging" && cfg.App.Env != "production" {
 		return fmt.Errorf("app.env must be local, staging, or production")
 	}
+
 	return nil
 }

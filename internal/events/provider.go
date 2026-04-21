@@ -7,65 +7,52 @@ import (
 	"github.com/google/wire"
 )
 
-// KafkaConfig holds all connection details for both producer and consumer.
-// Populated from internal/platform/config.Config.Kafka.
-type KafkaConfig struct {
-	Brokers          string // comma-separated, e.g. "broker1:9092,broker2:9092"
-	GroupID          string // consumer group ID, e.g. "viewaura-worker"
-	SecurityProtocol string // "PLAINTEXT" | "SASL_SSL"
-	SASLMechanism    string // "PLAIN" | "SCRAM-SHA-256"
-	SASLUsername     string
-	SASLPassword     string
+// PrimaryProducer is a named wrapper around the raw Kafka producer.
+// It gives Wire a distinct concrete type so it can differentiate:
+//
+//	*PrimaryProducer  — the unwrapped Kafka producer (this type)
+//	events.Producer   — the resilient wrapper (provided by resilience.ProviderSet)
+//
+// Without this distinction, ProvideResilientProducer(Producer) → Producer
+// creates an unresolvable self-referential cycle in the Wire graph.
+type PrimaryProducer struct{ Producer }
+
+// ProvideKafkaConfig extracts the Kafka sub-config from the root Config.
+func ProvideKafkaConfig(cfg *config.Config) config.KafkaConfig {
+	return cfg.Kafka
 }
 
-// Validate returns an error if any required field is missing.
-func (c KafkaConfig) Validate() error {
-	if c.Brokers == "" {
-		return fmt.Errorf("kafka: brokers must not be empty")
+// ProvidePrimaryProducer constructs the raw Kafka producer as *PrimaryProducer.
+func ProvidePrimaryProducer(cfg config.KafkaConfig) (*PrimaryProducer, error) {
+	if cfg.Brokers == "" {
+		return nil, fmt.Errorf("kafka: brokers must not be empty")
 	}
-	return nil
-}
-
-// ProvideProducer creates a Kafka Producer from config.
-// Bind to NoopProducer in tests: wire.Bind(new(Producer), new(*NoopProducer))
-func ProvideProducer(cfg KafkaConfig) (Producer, error) {
-	if err := cfg.Validate(); err != nil {
+	p, err := NewProducer(cfg)
+	if err != nil {
 		return nil, err
 	}
-	return NewProducer(
-		config.KafkaConfig{
-			Brokers:          cfg.Brokers,
-			GroupID:          cfg.GroupID,
-			SecurityProtocol: cfg.SecurityProtocol,
-			SASLMechanism:    cfg.SASLMechanism,
-			SASLUsername:     cfg.SASLUsername,
-			SASLPassword:     cfg.SASLPassword,
-		},
-	)
+	return &PrimaryProducer{p}, nil
 }
 
-func ProvideKafkaConfig(cfg *config.Config) KafkaConfig {
-	return KafkaConfig{
-		Brokers:          cfg.Kafka.Brokers,
-		GroupID:          cfg.Kafka.GroupID,
-		SecurityProtocol: cfg.Kafka.SecurityProtocol,
-		SASLMechanism:    cfg.Kafka.SASLMechanism,
-		SASLUsername:     cfg.Kafka.SASLUsername,
-		SASLPassword:     cfg.Kafka.SASLPassword,
-	}
-}
-
-// ProvideConsumer creates a Kafka Consumer from config.
-func ProvideConsumer(cfg KafkaConfig) (Consumer, error) {
-	if err := cfg.Validate(); err != nil {
-		return nil, err
+// ProvideConsumer constructs the Kafka consumer.
+func ProvideConsumer(cfg config.KafkaConfig) (Consumer, error) {
+	if cfg.Brokers == "" {
+		return nil, fmt.Errorf("kafka: brokers must not be empty")
 	}
 	return NewConsumer(cfg)
 }
 
-// ProducerSet wires the Kafka producer. Consumer is wired separately only in
-// cmd/worker — the HTTP server does not need a consumer.
-var ProducerSet = wire.NewSet(ProvideKafkaConfig, ProvideProducer)
+// ProducerSet provides *PrimaryProducer only.
+// The events.Producer binding is owned by resilience.ProviderSet.
+var ProviderSet = wire.NewSet(ProvideKafkaConfig, ProvidePrimaryProducer)
 
-// WorkerProviderSet wires both producer and consumer for cmd/worker.
-var WorkerProviderSet = wire.NewSet(ProvideProducer, ProvideConsumer)
+// WorkerProviderSet provides *PrimaryProducer and Consumer for cmd/worker.
+// The worker publishes directly via *PrimaryProducer — no resilience wrapper.
+var WorkerProviderSet = wire.NewSet(
+	ProvideKafkaConfig,
+	ProvidePrimaryProducer,
+	ProvideConsumer,
+	// Bind *PrimaryProducer → Producer so the worker's constructors that
+	// take events.Producer are satisfied without needing a resilience layer.
+	wire.Bind(new(Producer), new(*PrimaryProducer)),
+)

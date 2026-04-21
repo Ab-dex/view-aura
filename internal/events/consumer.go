@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Ab-dex/view-aura/internal/platform/config"
 	"github.com/Ab-dex/view-aura/internal/platform/logger"
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/rs/zerolog/log"
@@ -32,7 +33,7 @@ type kafkaConsumer struct {
 }
 
 // NewConsumer creates a new Kafka consumer group member.
-func NewConsumer(cfg KafkaConfig) (Consumer, error) {
+func NewConsumer(cfg config.KafkaConfig) (Consumer, error) {
 	c, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers":     cfg.Brokers,
 		"group.id":              cfg.GroupID,

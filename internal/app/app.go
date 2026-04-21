@@ -16,25 +16,26 @@ import (
 	"github.com/Ab-dex/view-aura/internal/platform/db"
 )
 
+// App is the root application object that owns all live resources.
 type App struct {
 	Config  *config.Config
 	DB      *db.Pool
-	Redis   *cache.Client
+	Redis   *cache.Client // nil when Redis is not configured — all code must guard
 	Server  *http.Server
 	Modules []contract.Module
 	Hooks   *Hooks
 }
 
+// New assembles the HTTP server and registers all module routes.
+// redis may be nil — the app degrades gracefully without it.
 func New(
 	cfg *config.Config,
-	db *db.Pool,
+	dbPool *db.Pool,
 	redis *cache.Client,
 	router *gin.Engine,
 	modules []contract.Module,
 ) (*App, error) {
-	// Register all module routes onto the router before wrapping in http.Server
 	api := router.Group("/api/v1")
-	fmt.Printf("All modules: %v", modules)
 	for _, m := range modules {
 		m.Register(api)
 	}
@@ -49,7 +50,7 @@ func New(
 
 	return &App{
 		Config:  cfg,
-		DB:      db,
+		DB:      dbPool,
 		Redis:   redis,
 		Server:  server,
 		Modules: modules,
@@ -57,6 +58,8 @@ func New(
 	}, nil
 }
 
+// NewRouter builds the Gin engine with all platform middleware applied.
+// redis is nullable — rate limiting and HTTP caching degrade gracefully when nil.
 func NewRouter(
 	cfg *config.Config,
 	redis *cache.Client,
@@ -68,16 +71,31 @@ func NewRouter(
 	r.Use(gin.HandlerFunc(recover))
 	r.Use(gin.HandlerFunc(reqID))
 	r.Use(gin.HandlerFunc(log))
-	r.Use(middleware.RateLimit(redis.Client, 1000, time.Minute))
-	r.Use(middleware.HTTPCache(redis, 2*time.Minute))
+
+	// Rate limiting — degrades to no-op when Redis is nil (fail open).
+	var rdbClient interface { /* goredis.UniversalClient */
+	} = nil
+	if redis != nil {
+		r.Use(middleware.RateLimit(redis.Client, 1000, time.Minute))
+		r.Use(middleware.HTTPCache(redis, 2*time.Minute))
+	} else {
+		// Without Redis: skip distributed rate limit and HTTP cache.
+		// StrictRateLimit on individual routes still works via the in-process
+		// token bucket fallback added to middleware.RateLimit below.
+		_ = rdbClient
+	}
 
 	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{
+		status := gin.H{
 			"status":  "ok",
 			"service": cfg.App.Name,
 			"version": cfg.App.Version,
 			"env":     cfg.App.Env,
-		})
+		}
+		if redis == nil {
+			status["degraded"] = []string{"redis_unavailable"}
+		}
+		c.JSON(http.StatusOK, status)
 	})
 
 	if cfg.App.Env != "production" {

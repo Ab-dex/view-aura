@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,8 +23,6 @@ type PaymentService interface {
 	CancelSubscription(ctx context.Context, userID string) error
 	GetInvoices(ctx context.Context, userID string, limit, offset int) ([]*domain.Invoice, int, error)
 	PayPerView(ctx context.Context, cmd domain.PayPerViewCmd) (*domain.ScreenerLicense, error)
-	// HasAccess returns true if the user has a Pro/Studio subscription or an
-	// active pay-per-view license for the given movie.
 	HasAccess(ctx context.Context, userID, movieID string) (bool, error)
 	GetLicenses(ctx context.Context, userID string) ([]*domain.ScreenerLicense, error)
 }
@@ -58,7 +57,6 @@ func NewPaymentService(
 // ─── Subscribe ────────────────────────────────────────────────────────────────
 
 func (s *paymentService) Subscribe(ctx context.Context, cmd domain.SubscribeCmd) (*domain.Subscription, error) {
-	// Guard: no double-subscription.
 	if _, err := s.subs.GetByUserID(ctx, cmd.UserID); err == nil {
 		return nil, apierror.ErrSubscriptionActive
 	}
@@ -68,8 +66,12 @@ func (s *paymentService) Subscribe(ctx context.Context, cmd domain.SubscribeCmd)
 		return nil, apierror.Validation("invalid plan: "+string(cmd.Plan), nil)
 	}
 
+	// ResilientStripeAdapter never returns a hard error — on Stripe outage it
+	// returns a "pending_*" sentinel ID and queues the op for replay.
+	// We record the subscription locally regardless so the user sees feedback.
 	customerID, err := s.stripe.CreateCustomer(ctx, cmd.Email, cmd.Name)
 	if err != nil {
+		// This should not happen with ResilientStripeAdapter but guard defensively.
 		return nil, apierror.UpstreamError("stripe", err)
 	}
 
@@ -78,20 +80,36 @@ func (s *paymentService) Subscribe(ctx context.Context, cmd domain.SubscribeCmd)
 		return nil, apierror.UpstreamError("stripe", err)
 	}
 
+	// Determine the effective subscription status.
+	// When Stripe is degraded, stripeSub.ID starts with "pending_" and the
+	// status is Incomplete — we store that and the webhook will update it later.
+	status := domain.SubStatusActive
+	if strings.HasPrefix(stripeSub.ID, "pending_") {
+		status = domain.SubscriptionStatus(string(stripeSub.Status)) // "incomplete"
+	}
+
+	// CurrentPeriodEnd is 0 for pending subs — default to 30 days from now
+	// so the UI shows a meaningful date while the webhook hasn't confirmed yet.
+	periodEnd := time.Unix(stripeSub.CurrentPeriodEnd, 0)
+	if periodEnd.IsZero() || stripeSub.CurrentPeriodEnd == 0 {
+		periodEnd = time.Now().Add(30 * 24 * time.Hour)
+	}
+
 	sub := &domain.Subscription{
 		ID:               uuid.New().String(),
 		UserID:           cmd.UserID,
 		Plan:             cmd.Plan,
-		Status:           domain.SubStatusActive,
+		Status:           status,
 		StripeSubID:      stripeSub.ID,
 		StripeCustomerID: customerID,
-		CurrentPeriodEnd: time.Unix(stripeSub.CurrentPeriodEnd, 0),
+		CurrentPeriodEnd: periodEnd,
 	}
 	created, err := s.subs.Create(ctx, sub)
 	if err != nil {
 		return nil, err
 	}
 
+	// ResilientProducer handles Kafka fallback — never propagates publish errors.
 	_ = s.producer.Publish(ctx, events.TopicPaymentEvents, "payment.subscription_created", events.SubscriptionCreated{
 		SubscriptionID:   created.ID,
 		UserID:           cmd.UserID,
@@ -105,6 +123,7 @@ func (s *paymentService) Subscribe(ctx context.Context, cmd domain.SubscribeCmd)
 	logger.FromContext(ctx).Info().
 		Str("user_id", cmd.UserID).
 		Str("plan", string(cmd.Plan)).
+		Bool("pending", strings.HasPrefix(stripeSub.ID, "pending_")).
 		Msg("payment: subscription created")
 
 	return created, nil
@@ -130,13 +149,17 @@ func (s *paymentService) UpgradePlan(ctx context.Context, cmd domain.UpgradePlan
 	}
 
 	oldPlan := sub.Plan
+	// ResilientStripeAdapter returns the existing sub on Stripe outage so the
+	// local row is updated optimistically; webhook confirms the change later.
 	updated, err := s.stripe.UpdateSubscription(ctx, sub.StripeSubID, priceID)
 	if err != nil {
 		return nil, apierror.UpstreamError("stripe", err)
 	}
 
 	sub.Plan = cmd.NewPlan
-	sub.CurrentPeriodEnd = time.Unix(updated.CurrentPeriodEnd, 0)
+	if updated.CurrentPeriodEnd > 0 {
+		sub.CurrentPeriodEnd = time.Unix(updated.CurrentPeriodEnd, 0)
+	}
 	result, err := s.subs.Update(ctx, sub)
 	if err != nil {
 		return nil, err
@@ -161,6 +184,8 @@ func (s *paymentService) CancelSubscription(ctx context.Context, userID string) 
 		return err
 	}
 
+	// ResilientStripeAdapter queues the cancel op when Stripe is down and
+	// returns nil so the local record is updated immediately.
 	if err := s.stripe.CancelSubscription(ctx, sub.StripeSubID); err != nil {
 		return apierror.UpstreamError("stripe", err)
 	}
@@ -194,7 +219,6 @@ func (s *paymentService) GetInvoices(ctx context.Context, userID string, limit, 
 // ─── PayPerView ───────────────────────────────────────────────────────────────
 
 func (s *paymentService) PayPerView(ctx context.Context, cmd domain.PayPerViewCmd) (*domain.ScreenerLicense, error) {
-	// Idempotent — return existing valid license if one exists.
 	if existing, err := s.licenses.GetByUserAndMovie(ctx, cmd.UserID, cmd.MovieID); err == nil && existing != nil {
 		return existing, nil
 	}

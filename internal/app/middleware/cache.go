@@ -16,18 +16,28 @@ import (
 
 type cacheConfig struct {
 	ttl     time.Duration
-	private bool // true = Cache-Control: private (authenticated responses)
+	private bool
 }
 
 const httpCacheOverrideKey = "http_cache_config"
 
 // HTTPCache is the global response cache middleware.
-// Only caches GET requests that complete with 200 OK.
-// Authenticated requests (with Authorization header) are never cached.
+//
+// When redis is nil (not configured) the middleware is a transparent passthrough —
+// every request is a cache miss and responses are never stored.
+// This allows the app to serve correctly without Redis; just without the
+// performance benefit of cached responses.
 func HTTPCache(redis *cache.Client, defaultTTL time.Duration) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Only cache GET requests.
 		if c.Request.Method != http.MethodGet {
+			c.Next()
+			return
+		}
+
+		// Without Redis: always miss, never store.
+		if redis == nil {
+			c.Header("X-Cache", "BYPASS")
 			c.Next()
 			return
 		}
@@ -37,7 +47,7 @@ func HTTPCache(redis *cache.Client, defaultTTL time.Duration) gin.HandlerFunc {
 			cfg = override.(cacheConfig)
 		}
 
-		// Never cache private/authenticated responses in Redis.
+		// Never cache authenticated responses in shared Redis.
 		isAuthed := c.GetHeader("Authorization") != ""
 		if isAuthed || cfg.private {
 			setCacheControlPrivate(c)
@@ -62,12 +72,12 @@ func HTTPCache(redis *cache.Client, defaultTTL time.Duration) gin.HandlerFunc {
 			}
 		}
 
-		// Cache miss — capture response.
+		// Cache miss — capture the response.
 		rw := &responseCapturer{ResponseWriter: c.Writer, body: &bytes.Buffer{}}
 		c.Writer = rw
 		c.Next()
 
-		// Only cache successful public responses.
+		// Only persist successful public responses.
 		if rw.status == http.StatusOK {
 			entry := cachedResponse{
 				Status:      rw.status,
@@ -88,8 +98,6 @@ func HTTPCache(redis *cache.Client, defaultTTL time.Duration) gin.HandlerFunc {
 }
 
 // CacheFor overrides the TTL for a specific route.
-//
-//	r.GET("/movies", middleware.CacheFor(5*time.Minute), handler.List)
 func CacheFor(ttl time.Duration) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Set(httpCacheOverrideKey, cacheConfig{ttl: ttl})
@@ -97,9 +105,7 @@ func CacheFor(ttl time.Duration) gin.HandlerFunc {
 	}
 }
 
-// NoCache disables caching and sets Cache-Control: no-store for a route.
-//
-//	r.GET("/users/me", middleware.NoCache(), handler.GetMe)
+// NoCache disables caching and sets Cache-Control: no-store.
 func NoCache() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Set(httpCacheOverrideKey, cacheConfig{ttl: 0, private: true})
@@ -109,15 +115,13 @@ func NoCache() gin.HandlerFunc {
 }
 
 // InvalidateCache deletes cached responses matching a key prefix.
-// Use in mutation handlers to bust stale list caches.
-//
-//	middleware.InvalidateCache(redis, "http:GET:/api/v1/movies*")
+// Safe to call when redis is nil — no-ops silently.
 func InvalidateCache(redis *cache.Client, patterns ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Next() // run handler first
+		c.Next()
 
-		if c.Writer.Status() >= 400 {
-			return // don't invalidate on error
+		if redis == nil || c.Writer.Status() >= 400 {
+			return
 		}
 
 		ctx := c.Request.Context()
@@ -169,8 +173,6 @@ func (r *responseCapturer) WriteHeader(status int) {
 }
 
 func httpCacheKey(c *gin.Context) string {
-	// Include query string in cache key so /movies?genre=action
-	// is cached separately from /movies?genre=drama.
 	raw := c.Request.URL.RequestURI()
 	hash := md5.Sum([]byte(raw))
 	return fmt.Sprintf("http:GET:%x", hash)
@@ -178,7 +180,6 @@ func httpCacheKey(c *gin.Context) string {
 
 // normalizeURL strips sensitive params from cache keys.
 func normalizeURL(raw string) string {
-	// Remove auth-related query params if accidentally present.
 	for _, p := range []string{"token", "access_token", "api_key"} {
 		raw = strings.ReplaceAll(raw, p+"=", "_=")
 	}

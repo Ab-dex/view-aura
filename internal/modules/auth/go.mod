@@ -6,6 +6,7 @@ require (
 	github.com/Ab-dex/view-aura/internal/app v0.0.0
 	github.com/Ab-dex/view-aura/internal/contract v0.0.0
 	github.com/Ab-dex/view-aura/internal/events v0.0.0
+	github.com/Ab-dex/view-aura/internal/modules/notification v0.0.0
 	github.com/Ab-dex/view-aura/internal/modules/user v0.0.0
 	github.com/Ab-dex/view-aura/internal/platform v0.0.0
 	github.com/gin-gonic/gin v1.12.0
@@ -74,6 +75,7 @@ replace (
 	github.com/Ab-dex/view-aura/internal/app => ../../app
 	github.com/Ab-dex/view-aura/internal/contract => ../../contract
 	github.com/Ab-dex/view-aura/internal/events => ../../events
+	github.com/Ab-dex/view-aura/internal/modules/notification => ../notification
 	github.com/Ab-dex/view-aura/internal/modules/user => ../user
 	github.com/Ab-dex/view-aura/internal/platform => ../../platform
 )

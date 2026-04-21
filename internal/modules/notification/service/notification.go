@@ -15,55 +15,29 @@ import (
 
 // NotificationService is the single interface for all notification operations.
 type NotificationService interface {
-	// Deliver creates an in-app record and fans out to push/email if the user
-	// has opted in.  Called by other modules (rating, review, social, etc.)
-	// after a state-changing operation.
 	Deliver(ctx context.Context, cmd domain.DeliverCmd) error
-
-	// List returns paginated notifications for the authenticated user.
 	List(ctx context.Context, filter domain.NotificationFilter) ([]*domain.Notification, int, error)
-
-	// UnreadCount returns the badge count for the current user.
 	UnreadCount(ctx context.Context, userID string) (int, error)
-
-	// MarkRead marks one notification as read.
 	MarkRead(ctx context.Context, id domain.NotificationID, userID string) error
-
-	// MarkAllRead marks every unread notification for the user as read.
 	MarkAllRead(ctx context.Context, userID string) error
-
-	// Delete removes a notification owned by the user.
 	Delete(ctx context.Context, id domain.NotificationID, userID string) error
-
-	// ─── Preferences ────────────────────────────────────────────────────────
-
-	// GetPreferences returns all stored preferences; the client merges with
-	// the full type×channel matrix to show every possible setting.
 	GetPreferences(ctx context.Context, userID string) ([]*domain.NotificationPreference, error)
-
-	// SetPreference enables or disables a single type+channel combination.
 	SetPreference(ctx context.Context, userID string, t domain.NotificationType, ch domain.Channel, enabled bool) error
-
-	// ─── Push tokens ────────────────────────────────────────────────────────
-
-	// RegisterPushToken registers a device token (call on app launch / after
-	// permission grant).
 	RegisterPushToken(ctx context.Context, userID, token, platform string) error
-
-	// UnregisterPushToken removes a token (call on logout from a device).
 	UnregisterPushToken(ctx context.Context, userID, token string) error
 }
-
-// ─── Implementation ───────────────────────────────────────────────────────────
 
 type notificationService struct {
 	notifs     repository.NotificationRepository
 	prefs      repository.PreferenceRepository
 	tokens     repository.PushTokenRepository
 	dispatcher Dispatcher
-	redis      *sharedcache.Client
+	// redis is nullable — rate limiting degrades to fail-open when nil.
+	redis *sharedcache.Client
 }
 
+// NewNotificationService constructs the service.
+// redis may be nil — rate limiting is skipped (fail open) without it.
 func NewNotificationService(
 	notifs repository.NotificationRepository,
 	prefs repository.PreferenceRepository,
@@ -82,22 +56,15 @@ func NewNotificationService(
 
 // ─── Deliver ──────────────────────────────────────────────────────────────────
 
-// Deliver is the single entry point for all notification creation.
-// It:
-//  1. Always persists an in-app record (ChannelInApp).
-//  2. Fans out to push if enabled + tokens exist.
-//  3. Fan-out to email is handled by a separate async worker (not here)
-//     to avoid blocking the request path.
 func (s *notificationService) Deliver(ctx context.Context, cmd domain.DeliverCmd) error {
 	log := logger.FromContext(ctx)
 
-	// ── Rate-limit: max 100 notifications per user per hour via Redis ─────
+	// Rate limit — skipped when Redis is unavailable (fail open).
 	if err := s.checkRateLimit(ctx, cmd.RecipientID); err != nil {
 		log.Warn().Str("user_id", cmd.RecipientID).Msg("notification rate limit exceeded")
-		return nil // silently drop — rate limiting is not an error to propagate
+		return nil
 	}
 
-	// ── Always create the in-app record ───────────────────────────────────
 	inAppEnabled, err := s.prefs.IsEnabled(ctx, cmd.RecipientID, cmd.Type, domain.ChannelInApp)
 	if err != nil {
 		return err
@@ -125,7 +92,6 @@ func (s *notificationService) Deliver(ctx context.Context, cmd domain.DeliverCmd
 			Msg("in-app notification created")
 	}
 
-	// ── Fan out to push if enabled ────────────────────────────────────────
 	pushEnabled, err := s.prefs.IsEnabled(ctx, cmd.RecipientID, cmd.Type, domain.ChannelPush)
 	if err != nil {
 		log.Error().Err(err).Msg("check push preference")
@@ -138,7 +104,6 @@ func (s *notificationService) Deliver(ctx context.Context, cmd domain.DeliverCmd
 			for i, t := range deviceTokens {
 				rawTokens[i] = t.Token
 			}
-			// Use notif if we have it; build a minimal one for push-only delivery.
 			envelope := notif
 			if envelope == nil {
 				envelope = &domain.Notification{
@@ -150,8 +115,8 @@ func (s *notificationService) Deliver(ctx context.Context, cmd domain.DeliverCmd
 					Payload: cmd.Payload,
 				}
 			}
+			// ResilientDispatcher never returns an error (always degrades gracefully).
 			if err := s.dispatcher.Dispatch(ctx, domain.ChannelPush, envelope, rawTokens); err != nil {
-				// Non-fatal: log and continue.
 				log.Error().Err(err).Str("user_id", cmd.RecipientID).Msg("push dispatch failed")
 			}
 		}
@@ -160,18 +125,27 @@ func (s *notificationService) Deliver(ctx context.Context, cmd domain.DeliverCmd
 	return nil
 }
 
-// checkRateLimit uses Redis INCR + EXPIRE to enforce 100 notifications/user/hour.
-// Returns a non-nil error only when the limit is exceeded.
+// checkRateLimit enforces 100 notifications/user/hour via Redis INCR.
+//
+// When Redis is nil (not configured) or unavailable, the function fails open —
+// all notifications are delivered without rate limiting.  This is intentional:
+// a degraded notification system is better than a broken one.
 func (s *notificationService) checkRateLimit(ctx context.Context, userID string) error {
+	if s.redis == nil {
+		// Redis not configured — fail open.
+		return nil
+	}
+
 	key := sharedcache.NotifRateKey(userID)
 	count, err := s.redis.Incr(ctx, key).Result()
 	if err != nil {
-		// Redis unavailable — fail open (allow delivery).
+		// Redis call failed — fail open rather than blocking delivery.
 		return nil
 	}
 	if count == 1 {
 		// First notification in this window — set the expiry.
-		s.redis.Expire(ctx, key, time.Hour)
+		// Non-fatal if Expire fails (key will just not expire this window).
+		_ = s.redis.Expire(ctx, key, time.Hour)
 	}
 	if count > 100 {
 		return apierror.New(429, apierror.CodeTooManyRequests, "notification rate limit exceeded")
