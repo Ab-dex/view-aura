@@ -12,6 +12,7 @@ import (
 	"github.com/Ab-dex/view-aura/internal/app"
 	"github.com/Ab-dex/view-aura/internal/contract"
 	events "github.com/Ab-dex/view-aura/internal/events"
+	auth "github.com/Ab-dex/view-aura/internal/modules/auth"
 	moderation "github.com/Ab-dex/view-aura/internal/modules/moderation"
 	movie "github.com/Ab-dex/view-aura/internal/modules/movie"
 	notification "github.com/Ab-dex/view-aura/internal/modules/notification"
@@ -30,6 +31,7 @@ import (
 )
 
 func ProvideModules(
+	authMod contract.AuthModule,
 	userMod contract.UserModule,
 	movieMod contract.MovieModule,
 	ratingMod contract.RatingModule,
@@ -43,6 +45,7 @@ func ProvideModules(
 	moderationMod contract.ModerationModule,
 ) []contract.Module {
 	return []contract.Module{
+		authMod.Module,
 		userMod.Module,
 		movieMod.Module,
 		ratingMod.Module,
@@ -83,6 +86,7 @@ func InitializeApp(ctx context.Context, cfg *config.Config) (*app.App, error) {
 
 		// Feature modules — each module's ProviderSet is listed here so the
 		// graph is self-contained and auditable in one place.
+		auth.AuthModuleSet,
 		user.UserModuleSet,
 		movie.MovieModuleSet,
 		rating.RatingModuleSet,
