@@ -22,6 +22,8 @@ type Config struct {
 	Tracing      TracingConfig      `mapstructure:"tracing"`
 	ModerationAI ModerationAIConfig `mapstructure:"moderation_ai"`
 	Gateway      GatewayConfig      `mapstructure:"gateway"`
+	Auth         AuthConfig         `mapstructure:"auth"`
+	EmailClient  EmailConfig        `mapstructure:"email_client"`
 }
 
 // ─── Existing config types (unchanged) ───────────────────────────────────────
@@ -73,6 +75,30 @@ type JWTConfig struct {
 type LogConfig struct {
 	Level  string `mapstructure:"level"`
 	Format string `mapstructure:"format"`
+}
+
+type AuthConfig struct {
+	MFAEncryptionKey string      `mapstructure:"mfa_encryption_key"` // 32-byte hex, from Vault
+	BaseURL          string      `mapstructure:"base_url"`           // e.g. "https://viewaura.com"
+	Google           GoogleOAuth `mapstructure:"google"`
+	Apple            AppleOAuth  `mapstructure:"apple"`
+}
+
+type EmailConfig struct {
+	BaseURL string `mapstructure:"base_url"`
+	ApiKey  string `mapstructure:"api_key"`
+}
+
+type GoogleOAuth struct {
+	ClientID     string `mapstructure:"client_id"`
+	ClientSecret string `mapstructure:"client_secret"`
+}
+
+type AppleOAuth struct {
+	ClientID   string `mapstructure:"client_id"`
+	TeamID     string `mapstructure:"team_id"`
+	KeyID      string `mapstructure:"key_id"`
+	PrivateKey string `mapstructure:"private_key"`
 }
 
 // ─── New config types ─────────────────────────────────────────────────────────

@@ -1,11 +1,18 @@
 package domain
 
-import "time"
+import (
+	"time"
+
+	userdomain "github.com/Ab-dex/view-aura/internal/modules/user/domain"
+)
+
+// UserID aliases user/domain.UserID so the profile domain uses the canonical
+// type without re-declaring it locally.  Type aliases preserve identity —
+// profile.domain.UserID IS user/domain.UserID; no casts needed at boundaries.
+type UserID = userdomain.UserID
 
 // ProfileID is a typed string to prevent confusion with UserID.
 type ProfileID string
-
-type UserID string
 
 func (id ProfileID) String() string { return string(id) }
 
@@ -35,36 +42,30 @@ const MaxProfilesPerUser = 5
 
 // Profile is a viewing identity within a user account.
 // All recommendation, watchlist, viewing history, and rating data is scoped to
-// a ProfileID, not a UserID. This isolates tastes between household members.
+// a ProfileID, not a UserID.  This isolates tastes between household members.
 type Profile struct {
 	ID        ProfileID
-	UserID    UserID
+	UserID    UserID // = user/domain.UserID (type alias — no cast required)
 	Name      string
 	AvatarURL string
 	Type      ProfileType
 
-	// PINHash is a bcrypt hash of the profile's 4-digit PIN.
-	// Empty means no PIN protection. Kids profiles should always have a PIN
-	// set by a parent to prevent easy switching.
+	// PINHash is a bcrypt hash of the 4-digit PIN.
+	// Empty means no PIN protection.
 	PINHash string
 
 	// MaxRating is the maximum MPAA rating visible in this profile.
-	// Enforced for ProfileTypeKids (ceiling = PG).
-	// For standard profiles nil means "no restriction".
+	// For standard profiles nil means no restriction.
+	// Kids profiles are always capped at PG.
 	MaxRating *MPAARating
 
-	// PreferredLanguages overrides user-level language preferences for this profile.
 	PreferredLanguages []string
-
-	// IsDefault is true for the primary profile that is selected on login.
-	IsDefault bool
-
-	SortOrder int
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	IsDefault          bool
+	SortOrder          int
+	CreatedAt          time.Time
+	UpdatedAt          time.Time
 }
 
-// IsKids returns true when this profile is in kids mode.
 func (p *Profile) IsKids() bool { return p.Type == ProfileTypeKids }
 
 // AllowsRating reports whether content with the given MPAA rating is visible.
@@ -81,37 +82,32 @@ func (p *Profile) AllowsRating(rating MPAARating) bool {
 
 // ─── Commands ─────────────────────────────────────────────────────────────────
 
-// CreateProfileCmd carries validated input for creating a new profile.
 type CreateProfileCmd struct {
 	UserID    UserID
 	Name      string
 	AvatarURL string
 	Type      ProfileType
-	PIN       string      // plaintext; hashed in service layer
-	MaxRating *MPAARating // nil = no restriction; required when Type = kids
+	PIN       string
+	MaxRating *MPAARating
 }
 
-// UpdateProfileCmd carries mutable profile fields.
 type UpdateProfileCmd struct {
 	UserID    UserID
 	ProfileID ProfileID
 	Name      *string
 	AvatarURL *string
-	PIN       *string // plaintext; service will re-hash
+	PIN       *string
 	MaxRating *MPAARating
 	IsDefault *bool
 	SortOrder *int
 }
 
-// SwitchProfileCmd is used when a user switches the active profile.
 type SwitchProfileCmd struct {
 	UserID    UserID
 	ProfileID ProfileID
-	PIN       string // required when the profile has a PIN
+	PIN       string
 }
 
-// DeleteProfileCmd removes a profile.  Cannot delete the last remaining profile
-// or a default profile without first designating a new default.
 type DeleteProfileCmd struct {
 	UserID    UserID
 	ProfileID ProfileID

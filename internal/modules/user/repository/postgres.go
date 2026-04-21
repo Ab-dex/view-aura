@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -31,22 +30,31 @@ func (r *pgUserRepository) Create(ctx context.Context, u *domain.User) (*domain.
 	const q = `
 		INSERT INTO users (
 			id, email, email_verified, username, display_name,
-			role, status, auth_provider, provider_id,
-			locale, timezone, country, created_at, updated_at
+			role, status,
+			locale, timezone, country,
+			created_at, updated_at
 		) VALUES (
 			$1, $2, $3, $4, $5,
-			$6, $7, $8, $9,
-			$10, $11, $12, NOW(), NOW()
+			$6, $7,
+			$8, $9, $10,
+			NOW(), NOW()
 		)
 		RETURNING id, email, email_verified, username, display_name,
-		          role, status, auth_provider, provider_id,
+		          role, status,
 		          locale, timezone, country,
 		          is_deleted, deleted_at, created_at, updated_at`
 
 	row := r.pool.QueryRow(ctx, q,
-		u.ID, u.Email, u.EmailVerified, u.Username, u.DisplayName,
-		u.Role, u.Status, u.AuthProvider, u.ProviderID,
-		u.Locale, u.Timezone, u.Country,
+		u.ID,
+		u.Email,
+		u.EmailVerified,
+		u.Username,
+		u.DisplayName,
+		u.Role,
+		u.Status,
+		u.Locale,
+		u.Timezone,
+		u.Country,
 	)
 
 	result, err := scanUser(row)
@@ -183,109 +191,6 @@ func (r *pgUserRepository) SoftDelete(ctx context.Context, id domain.UserID) err
 	return nil
 }
 
-// ─── Security repository ──────────────────────────────────────────────────────
-
-type pgSecurityRepository struct {
-	pool *pgxpool.Pool
-}
-
-// NewSecurityRepository constructs a Postgres SecurityRepository.
-func NewSecurityRepository(pool *pgxpool.Pool) SecurityRepository {
-	return &pgSecurityRepository{pool: pool}
-}
-
-const maxFailedLogins = 5
-const lockDuration = 15 * time.Minute
-
-func (r *pgSecurityRepository) Upsert(ctx context.Context, sec *domain.UserSecurity) (*domain.UserSecurity, error) {
-	const q = `
-		INSERT INTO user_security (
-			user_id, failed_login_count, last_failed_login, locked_until,
-			risk_score, two_factor_enabled, last_login_at, last_login_ip, updated_at
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW())
-		ON CONFLICT (user_id) DO UPDATE SET
-			failed_login_count = EXCLUDED.failed_login_count,
-			last_failed_login  = EXCLUDED.last_failed_login,
-			locked_until       = EXCLUDED.locked_until,
-			risk_score         = EXCLUDED.risk_score,
-			two_factor_enabled = EXCLUDED.two_factor_enabled,
-			last_login_at      = EXCLUDED.last_login_at,
-			last_login_ip      = EXCLUDED.last_login_ip,
-			updated_at         = NOW()
-		RETURNING user_id, failed_login_count, last_failed_login, locked_until,
-		          risk_score, two_factor_enabled, last_login_at, last_login_ip, updated_at`
-
-	row := r.pool.QueryRow(ctx, q,
-		sec.UserID, sec.FailedLoginCount, sec.LastFailedLogin, sec.LockedUntil,
-		sec.RiskScore, sec.TwoFactorEnabled, sec.LastLoginAt, sec.LastLoginIP,
-	)
-	return scanSecurity(row)
-}
-
-func (r *pgSecurityRepository) GetByUserID(ctx context.Context, userID domain.UserID) (*domain.UserSecurity, error) {
-	const q = `
-		SELECT user_id, failed_login_count, last_failed_login, locked_until,
-		       risk_score, two_factor_enabled, last_login_at, last_login_ip, updated_at
-		FROM user_security WHERE user_id = $1`
-
-	row := r.pool.QueryRow(ctx, q, userID)
-	sec, err := scanSecurity(row)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			// Return a zero record rather than an error — security state is
-			// lazily created on first login.
-			return &domain.UserSecurity{UserID: userID}, nil
-		}
-		return nil, mapPgError(err, "get security by user id")
-	}
-	return sec, nil
-}
-
-func (r *pgSecurityRepository) IncrementFailedLogins(ctx context.Context, userID domain.UserID) (*domain.UserSecurity, error) {
-	const q = `
-		INSERT INTO user_security (user_id, failed_login_count, last_failed_login, updated_at)
-		VALUES ($1, 1, NOW(), NOW())
-		ON CONFLICT (user_id) DO UPDATE
-		SET failed_login_count = user_security.failed_login_count + 1,
-		    last_failed_login  = NOW(),
-		    locked_until = CASE
-		        WHEN user_security.failed_login_count + 1 >= $2
-		        THEN NOW() + ($3::interval)
-		        ELSE user_security.locked_until
-		    END,
-		    updated_at = NOW()
-		RETURNING user_id, failed_login_count, last_failed_login, locked_until,
-		          risk_score, two_factor_enabled, last_login_at, last_login_ip, updated_at`
-
-	row := r.pool.QueryRow(ctx, q, userID, maxFailedLogins, fmt.Sprintf("%d minutes", int(lockDuration.Minutes())))
-	return scanSecurity(row)
-}
-
-func (r *pgSecurityRepository) ResetFailedLogins(ctx context.Context, userID domain.UserID) error {
-	const q = `
-		UPDATE user_security
-		SET failed_login_count = 0, locked_until = NULL, updated_at = NOW()
-		WHERE user_id = $1`
-	_, err := r.pool.Exec(ctx, q, userID)
-	return mapPgError(err, "reset failed logins")
-}
-
-func (r *pgSecurityRepository) LockUntil(ctx context.Context, userID domain.UserID, until interface{}) error {
-	const q = `UPDATE user_security SET locked_until = $2, updated_at = NOW() WHERE user_id = $1`
-	_, err := r.pool.Exec(ctx, q, userID, until)
-	return mapPgError(err, "lock until")
-}
-
-func (r *pgSecurityRepository) RecordLogin(ctx context.Context, userID domain.UserID, ip string) error {
-	const q = `
-		INSERT INTO user_security (user_id, last_login_at, last_login_ip, updated_at)
-		VALUES ($1, NOW(), $2, NOW())
-		ON CONFLICT (user_id) DO UPDATE
-		SET last_login_at = NOW(), last_login_ip = $2, updated_at = NOW()`
-	_, err := r.pool.Exec(ctx, q, userID, ip)
-	return mapPgError(err, "record login")
-}
-
 // ─── Profile repository ───────────────────────────────────────────────────────
 
 type pgProfileRepository struct {
@@ -395,28 +300,28 @@ type rowScanner interface {
 
 func scanUser(row rowScanner) (*domain.User, error) {
 	var u domain.User
-	err := row.Scan(
-		&u.ID, &u.Email, &u.EmailVerified, &u.Username, &u.DisplayName,
-		&u.Role, &u.Status, &u.AuthProvider, &u.ProviderID,
-		&u.Locale, &u.Timezone, &u.Country,
-		&u.IsDeleted, &u.DeletedAt, &u.CreatedAt, &u.UpdatedAt,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &u, nil
-}
 
-func scanSecurity(row rowScanner) (*domain.UserSecurity, error) {
-	var s domain.UserSecurity
 	err := row.Scan(
-		&s.UserID, &s.FailedLoginCount, &s.LastFailedLogin, &s.LockedUntil,
-		&s.RiskScore, &s.TwoFactorEnabled, &s.LastLoginAt, &s.LastLoginIP, &s.UpdatedAt,
+		&u.ID,
+		&u.Email,
+		&u.EmailVerified,
+		&u.Username,
+		&u.DisplayName,
+		&u.Role,
+		&u.Status,
+		&u.Locale,
+		&u.Timezone,
+		&u.Country,
+		&u.IsDeleted,
+		&u.DeletedAt,
+		&u.CreatedAt,
+		&u.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
 	}
-	return &s, nil
+
+	return &u, nil
 }
 
 func scanProfile(row rowScanner) (*domain.UserProfile, error) {

@@ -5,6 +5,8 @@ go 1.25.0
 require (
 	github.com/Ab-dex/view-aura/internal/contract v0.0.0
 	github.com/Ab-dex/view-aura/internal/modules/user v0.0.0
+	github.com/Ab-dex/view-aura/internal/modules/user v0.0.0
+	github.com/Ab-dex/view-aura/internal/modules/auth v0.0.0
 	github.com/Ab-dex/view-aura/internal/platform v0.0.0
 	github.com/gin-gonic/gin v1.12.0
 	github.com/google/wire v0.7.0
@@ -15,6 +17,7 @@ require (
 replace (
 	github.com/Ab-dex/view-aura/internal/contract => ../contract
 	github.com/Ab-dex/view-aura/internal/modules/user => ../modules/user
+	github.com/Ab-dex/view-aura/internal/modules/auth => ../modules/auth
 	github.com/Ab-dex/view-aura/internal/platform => ../platform
 )
 

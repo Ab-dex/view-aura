@@ -11,7 +11,7 @@ import (
 
 	goredis "github.com/redis/go-redis/v9"
 
-	"github.com/Ab-dex/view-aura/internal/modules/user/service"
+	authservice "github.com/Ab-dex/view-aura/internal/modules/auth/service"
 	apierror "github.com/Ab-dex/view-aura/internal/platform/error"
 	"github.com/Ab-dex/view-aura/internal/platform/logger"
 	"github.com/gin-gonic/gin"
@@ -30,7 +30,7 @@ const (
 // Auth validates the Bearer token, checks the JTI blocklist, then injects
 // identity fields into the Gin context so downstream handlers can access them
 // via c.Get(ContextKeyUserID) without re-parsing the token.
-func Auth(tokens service.TokenService) gin.HandlerFunc {
+func Auth(tokens authservice.TokenService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		raw := c.GetHeader("Authorization")
 		if raw == "" {

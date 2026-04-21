@@ -8,7 +8,8 @@ import (
 
 	goredis "github.com/redis/go-redis/v9"
 
-	"github.com/Ab-dex/view-aura/internal/modules/user/domain"
+	"github.com/Ab-dex/view-aura/internal/modules/auth/domain"
+	userdomain "github.com/Ab-dex/view-aura/internal/modules/user/domain"
 	sharedredis "github.com/Ab-dex/view-aura/internal/platform/cache"
 	apierror "github.com/Ab-dex/view-aura/internal/platform/error"
 )
@@ -116,7 +117,7 @@ func (r *sessionCache) RevokeByID(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *sessionCache) RevokeAllForUser(ctx context.Context, userID domain.UserID) error {
+func (r *sessionCache) RevokeAllForUser(ctx context.Context, userID userdomain.UserID) error {
 	ids, err := r.client.SMembers(ctx, sharedredis.UserSessionsKey(userID.String())).Result()
 	if err != nil {
 		return apierror.New(500, apierror.CodeCache, "failed to list sessions for user").WithCause(err)
@@ -129,7 +130,7 @@ func (r *sessionCache) RevokeAllForUser(ctx context.Context, userID domain.UserI
 	return nil
 }
 
-func (r *sessionCache) ListByUser(ctx context.Context, userID domain.UserID) ([]*domain.UserSession, error) {
+func (r *sessionCache) ListByUser(ctx context.Context, userID userdomain.UserID) ([]*domain.UserSession, error) {
 	ids, err := r.client.SMembers(ctx, sharedredis.UserSessionsKey(userID.String())).Result()
 	if err != nil {
 		return nil, apierror.New(500, apierror.CodeCache, "failed to list session ids").WithCause(err)
@@ -191,7 +192,7 @@ func toSessionData(s *domain.UserSession) sessionData {
 func fromSessionData(d sessionData) *domain.UserSession {
 	s := &domain.UserSession{
 		ID:               d.ID,
-		UserID:           domain.UserID(d.UserID),
+		UserID:           userdomain.UserID(d.UserID),
 		DeviceID:         d.DeviceID,
 		IPAddress:        d.IPAddress,
 		UserAgent:        d.UserAgent,

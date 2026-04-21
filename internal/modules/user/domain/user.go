@@ -27,16 +27,6 @@ const (
 	StatusPending   Status = "pending_verification"
 )
 
-// AuthProvider identifies the identity provider used to create the account.
-type AuthProvider string
-
-const (
-	ProviderEmail  AuthProvider = "email"
-	ProviderGoogle AuthProvider = "google"
-	ProviderApple  AuthProvider = "apple"
-	ProviderGitHub AuthProvider = "github"
-)
-
 // Visibility controls who can see a user profile.
 type Visibility string
 
@@ -46,9 +36,11 @@ const (
 	VisibilityFriends Visibility = "friends"
 )
 
-// ─── Core entities ────────────────────────────────────────────────────────────
+// ─── Core identity entity ─────────────────────────────────────────────────────
 
 // User is the canonical identity record.
+// Auth-specific fields (AuthProvider, ProviderID) have been removed — those
+// live on LinkedAuthProvider in the auth module.
 type User struct {
 	ID            UserID
 	Email         string
@@ -57,8 +49,6 @@ type User struct {
 	DisplayName   string
 	Role          Role
 	Status        Status
-	AuthProvider  AuthProvider
-	ProviderID    *string
 	Locale        string
 	Timezone      string
 	Country       string
@@ -72,21 +62,10 @@ func (u *User) IsActive() bool    { return u.Status == StatusActive && !u.IsDele
 func (u *User) IsSuspended() bool { return u.Status == StatusSuspended }
 func (u *User) IsAdmin() bool     { return u.Role == RoleAdmin }
 
-// LinkedAuthProvider stores an external OAuth provider credential linked to a
-// user account (supports multiple providers per account).
-type LinkedAuthProvider struct {
-	ID           string
-	UserID       UserID
-	Provider     AuthProvider
-	ProviderID   string
-	AccessToken  *string
-	RefreshToken *string
-	LinkedAt     time.Time
-	LastUsedAt   *time.Time
-}
+// ─── Profile and preferences ──────────────────────────────────────────────────
 
-// UserProfile holds mutable presentation data separated from the hot
-// identity table to reduce write amplification on the users shard.
+// UserProfile holds mutable presentation data separated from the hot identity
+// table to reduce write amplification on the users shard.
 type UserProfile struct {
 	UserID     UserID
 	AvatarURL  string
@@ -100,7 +79,6 @@ type UserProfile struct {
 }
 
 // UserPreferences holds per-user content and UI settings.
-// Using concrete fields (not JSONB) makes the preference store queryable.
 type UserPreferences struct {
 	UserID             UserID
 	PreferredGenres    []string
@@ -112,61 +90,10 @@ type UserPreferences struct {
 	UpdatedAt          time.Time
 }
 
-// UserSecurity stores authentication state checked on every login.
-type UserSecurity struct {
-	UserID           UserID
-	FailedLoginCount int
-	LastFailedLogin  *time.Time
-	LockedUntil      *time.Time
-	RiskScore        float64
-	TwoFactorEnabled bool
-	LastLoginAt      *time.Time
-	LastLoginIP      string
-	UpdatedAt        time.Time
-}
+// ─── Commands ─────────────────────────────────────────────────────────────────
 
-func (s *UserSecurity) IsLocked() bool {
-	return s.LockedUntil != nil && s.LockedUntil.After(time.Now())
-}
-
-// UserSession represents a single authenticated session persisted for audit.
-type UserSession struct {
-	ID               string
-	UserID           UserID
-	DeviceID         string
-	IPAddress        string
-	UserAgent        string
-	RefreshTokenHash string
-	CreatedAt        time.Time
-	ExpiresAt        time.Time
-	RevokedAt        *time.Time
-}
-
-func (s *UserSession) IsExpired() bool { return time.Now().After(s.ExpiresAt) }
-func (s *UserSession) IsRevoked() bool { return s.RevokedAt != nil }
-
-// ─── Command / value objects ──────────────────────────────────────────────────
-
-// RegisterCmd carries validated input for creating a new email/password account.
-type RegisterCmd struct {
-	Email       string
-	Password    string
-	DisplayName string
-	Locale      string
-	Country     string
-}
-
-// LoginCmd carries credentials for a local (email/password) login attempt.
-type LoginCmd struct {
-	Email     string
-	Password  string
-	DeviceID  string
-	IPAddress string
-	UserAgent string
-}
-
-// UpdateProfileCmd carries mutable profile fields. Pointer fields mean
-// "present in this update request".
+// UpdateProfileCmd carries mutable profile fields.
+// Pointer fields mean "present in this update request".
 type UpdateProfileCmd struct {
 	UserID     UserID
 	AvatarURL  *string
@@ -187,11 +114,4 @@ type UpdatePreferencesCmd struct {
 	AdultContent       *bool
 	DarkMode           *bool
 	AutoplayTrailers   *bool
-}
-
-// TokenPair bundles access and refresh tokens returned after successful auth.
-type TokenPair struct {
-	AccessToken  string
-	RefreshToken string
-	ExpiresIn    int64 // seconds until access token expiry
 }

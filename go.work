@@ -8,6 +8,7 @@ use (
 	./internal/app
 	./internal/contract
 	./internal/events
+	./internal/modules/auth
 	./internal/modules/moderation
 	./internal/modules/movie
 	./internal/modules/notification

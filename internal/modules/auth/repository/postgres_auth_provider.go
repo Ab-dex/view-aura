@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	authdomain "github.com/Ab-dex/view-aura/internal/modules/auth/domain"
 	"github.com/Ab-dex/view-aura/internal/modules/user/domain"
 	apierror "github.com/Ab-dex/view-aura/internal/platform/error"
 )
@@ -23,7 +24,7 @@ func NewAuthProviderRepository(pool *pgxpool.Pool) AuthProviderRepository {
 
 // Link inserts a new provider row, or updates the tokens + last_used_at if the
 // (user_id, provider, provider_id) triple already exists.
-func (r *pgAuthProviderRepository) Link(ctx context.Context, p *domain.LinkedAuthProvider) error {
+func (r *pgAuthProviderRepository) Link(ctx context.Context, p *authdomain.LinkedAuthProvider) error {
 	const q = `
 		INSERT INTO user_auth_providers (
 			id, user_id, provider, provider_id,
@@ -43,7 +44,7 @@ func (r *pgAuthProviderRepository) Link(ctx context.Context, p *domain.LinkedAut
 }
 
 // Unlink removes the provider row for the given user + provider combination.
-func (r *pgAuthProviderRepository) Unlink(ctx context.Context, userID domain.UserID, provider domain.AuthProvider) error {
+func (r *pgAuthProviderRepository) Unlink(ctx context.Context, userID domain.UserID, provider authdomain.AuthProvider) error {
 	const q = `DELETE FROM user_auth_providers WHERE user_id = $1 AND provider = $2`
 	ct, err := r.pool.Exec(ctx, q, userID, provider)
 	if err != nil {
@@ -58,7 +59,7 @@ func (r *pgAuthProviderRepository) Unlink(ctx context.Context, userID domain.Use
 // GetByProvider fetches the link record for a given provider + providerID pair.
 // This is the primary lookup used during OAuth callback and email/password login
 // (where provider = "email" and providerID = the user's email address).
-func (r *pgAuthProviderRepository) GetByProvider(ctx context.Context, provider domain.AuthProvider, providerID string) (*domain.LinkedAuthProvider, error) {
+func (r *pgAuthProviderRepository) GetByProvider(ctx context.Context, provider authdomain.AuthProvider, providerID string) (*authdomain.LinkedAuthProvider, error) {
 	const q = `
 		SELECT id, user_id, provider, provider_id,
 		       access_token, refresh_token, linked_at, last_used_at
@@ -76,8 +77,26 @@ func (r *pgAuthProviderRepository) GetByProvider(ctx context.Context, provider d
 	return p, nil
 }
 
+func (r *pgAuthProviderRepository) GetByProviderID(ctx context.Context, provider authdomain.AuthProvider, providerID string) (*authdomain.LinkedAuthProvider, error) {
+	const q = `
+		SELECT id, user_id, provider, provider_id,
+		       access_token, refresh_token, linked_at, last_used_at
+		FROM user_auth_providers
+		WHERE provider = $1 AND provider_id = $2`
+
+	row := r.pool.QueryRow(ctx, q, provider, providerID)
+	p, err := scanAuthProvider(row)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, apierror.ErrUserNotFound
+		}
+		return nil, mapPgError(err, "get auth provider by provider ID")
+	}
+	return p, nil
+}
+
 // ListByUser returns every provider linked to the given user.
-func (r *pgAuthProviderRepository) ListByUser(ctx context.Context, userID domain.UserID) ([]*domain.LinkedAuthProvider, error) {
+func (r *pgAuthProviderRepository) ListByUser(ctx context.Context, userID domain.UserID) ([]*authdomain.LinkedAuthProvider, error) {
 	const q = `
 		SELECT id, user_id, provider, provider_id,
 		       access_token, refresh_token, linked_at, last_used_at
@@ -91,7 +110,7 @@ func (r *pgAuthProviderRepository) ListByUser(ctx context.Context, userID domain
 	}
 	defer rows.Close()
 
-	var out []*domain.LinkedAuthProvider
+	var out []*authdomain.LinkedAuthProvider
 	for rows.Next() {
 		p, err := scanAuthProvider(rows)
 		if err != nil {
@@ -107,8 +126,8 @@ func (r *pgAuthProviderRepository) ListByUser(ctx context.Context, userID domain
 
 // ─── Scanner ──────────────────────────────────────────────────────────────────
 
-func scanAuthProvider(row rowScanner) (*domain.LinkedAuthProvider, error) {
-	var p domain.LinkedAuthProvider
+func scanAuthProvider(row rowScanner) (*authdomain.LinkedAuthProvider, error) {
+	var p authdomain.LinkedAuthProvider
 	var linkedAt time.Time
 	err := row.Scan(
 		&p.ID, &p.UserID, &p.Provider, &p.ProviderID,

@@ -8,6 +8,7 @@ require (
 	github.com/Ab-dex/view-aura/internal/contract v0.0.0
 	github.com/Ab-dex/view-aura/internal/modules/profile v0.0.0
 	github.com/Ab-dex/view-aura/internal/platform v0.0.0
+	github.com/Ab-dex/view-aura/internal/modules/auth v0.0.0
 	github.com/gin-gonic/gin v1.12.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
@@ -22,6 +23,7 @@ replace (
 	github.com/Ab-dex/view-aura/internal/contract => ../../contract
 	github.com/Ab-dex/view-aura/internal/modules/profile => ../../modules/profile
 	github.com/Ab-dex/view-aura/internal/platform => ../../platform
+	github.com/Ab-dex/view-aura/internal/modules/auth => ../../modules/auth
 )
 
 require (

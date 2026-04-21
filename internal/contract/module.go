@@ -13,6 +13,7 @@ type RecoveryMiddleware gin.HandlerFunc
 type LoggerMiddleware gin.HandlerFunc
 
 // Typed module wrappers so Wire can distinguish between them.
+type AuthModule struct{ Module }
 type UserModule struct{ Module }
 type MovieModule struct{ Module }
 type RatingModule struct{ Module }

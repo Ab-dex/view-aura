@@ -2,257 +2,44 @@ package api
 
 import (
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/Ab-dex/view-aura/internal/app/middleware"
 	"github.com/Ab-dex/view-aura/internal/modules/user/domain"
 	"github.com/Ab-dex/view-aura/internal/modules/user/service"
 	apierror "github.com/Ab-dex/view-aura/internal/platform/error"
 	"github.com/Ab-dex/view-aura/internal/platform/logger"
 )
 
-// UserHandler wires HTTP routes to the UserService.
+// UserHandler exposes user identity and preference routes.
+//
+// Auth routes (register, login, refresh, logout, change-password, sessions)
+// are owned by auth/api/http.AuthHandler and mounted under /auth.
 type UserHandler struct {
 	svc service.UserService
 }
 
-// NewUserHandler constructs the handler. Wire calls this.
 func NewUserHandler(svc service.UserService) *UserHandler {
 	return &UserHandler{svc: svc}
 }
 
-// RegisterRoutes attaches all User routes to the given Gin router group.
-// Prefix is typically /api/v1/users  (applied by the caller).
-func (h *UserHandler) RegisterRoutes(r gin.IRouter) {
-	// Public
-	r.POST("/register", middleware.StrictRateLimit(10, time.Minute), h.Register)
-	r.POST("/login", middleware.StrictRateLimit(10, time.Minute), h.Login)
-	r.POST("/refresh", middleware.StrictRateLimit(10, time.Minute), h.RefreshTokens)
-}
+// RegisterRoutes mounts routes that do not require authentication.
+// Currently empty — all user routes require an authenticated session.
+func (h *UserHandler) RegisterRoutes(_ gin.IRouter) {}
 
+// RegisterProtectedRoutes mounts routes that require a valid access token.
+// The auth middleware must be applied by the caller before this group.
 func (h *UserHandler) RegisterProtectedRoutes(r gin.IRouter) {
-	// Auth & Session Management
-	r.POST("/logout", h.Logout)
-	r.POST("/logout/all", h.LogoutAll)
-	r.GET("/me/sessions", h.ListSessions)
-	r.DELETE("/me/sessions/:session_id", middleware.StrictRateLimit(10, time.Minute), h.RevokeSession)
-
-	// Account Management (The "User" entity)
-	// Rename /me/profile to /me/account to distinguish from Household Profiles
 	r.GET("/me", h.GetMe)
 	r.GET("/me/account", h.GetAccountDetails)
 	r.PATCH("/me/account", h.UpdateAccountDetails)
-
-	// Global Account Settings
 	r.GET("/me/preferences", h.GetPreferences)
 	r.PATCH("/me/preferences", h.UpdatePreferences)
-	r.PUT("/me/password", h.ChangePassword)
 	r.DELETE("/me", h.DeleteAccount)
 }
 
-// ─── Request / Response DTOs ──────────────────────────────────────────────────
-
-type registerRequest struct {
-	Email       string `json:"email"        binding:"required,email"`
-	Password    string `json:"password"     binding:"required,min=8"`
-	DisplayName string `json:"display_name" binding:"required,min=2"`
-	Locale      string `json:"locale"`
-	Country     string `json:"country"`
-}
-
-type loginRequest struct {
-	Email    string `json:"email"    binding:"required,email"`
-	Password string `json:"password" binding:"required"`
-}
-
-type refreshRequest struct {
-	RefreshToken string `json:"refresh_token" binding:"required"`
-}
-
-type updateProfileRequest struct {
-	AvatarURL  *string `json:"avatar_url"`
-	BannerURL  *string `json:"banner_url"`
-	Bio        *string `json:"bio"`
-	Website    *string `json:"website"`
-	Birthdate  *string `json:"birthdate"` // RFC3339 date
-	Gender     *string `json:"gender"`
-	Visibility *string `json:"visibility"`
-}
-
-type updatePreferencesRequest struct {
-	PreferredGenres    *[]string `json:"preferred_genres"`
-	DislikedGenres     *[]string `json:"disliked_genres"`
-	PreferredLanguages *[]string `json:"preferred_languages"`
-	AdultContent       *bool     `json:"adult_content"`
-	DarkMode           *bool     `json:"dark_mode"`
-	AutoplayTrailers   *bool     `json:"autoplay_trailers"`
-}
-
-type changePasswordRequest struct {
-	OldPassword string `json:"old_password" binding:"required"`
-	NewPassword string `json:"new_password" binding:"required,min=8"`
-}
-
-// userResponse is the safe external representation of a user (no hash etc.).
-type userResponse struct {
-	ID            string `json:"id"`
-	Email         string `json:"email"`
-	EmailVerified bool   `json:"email_verified"`
-	Username      string `json:"username,omitempty"`
-	DisplayName   string `json:"display_name"`
-	Role          string `json:"role"`
-	Status        string `json:"status"`
-	Locale        string `json:"locale"`
-	Country       string `json:"country"`
-	CreatedAt     string `json:"created_at"`
-}
-
-type authResponse struct {
-	User         userResponse `json:"user"`
-	AccessToken  string       `json:"access_token"`
-	RefreshToken string       `json:"refresh_token"`
-	ExpiresIn    int64        `json:"expires_in"`
-}
-
-type tokenResponse struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-	ExpiresIn    int64  `json:"expires_in"`
-}
-
-type profileResponse struct {
-	UserID     string `json:"user_id"`
-	AvatarURL  string `json:"avatar_url"`
-	BannerURL  string `json:"banner_url"`
-	Bio        string `json:"bio"`
-	Website    string `json:"website"`
-	Birthdate  string `json:"birthdate,omitempty"`
-	Gender     string `json:"gender"`
-	Visibility string `json:"visibility"`
-	UpdatedAt  string `json:"updated_at"`
-}
-
-type preferencesResponse struct {
-	PreferredGenres    []string `json:"preferred_genres"`
-	DislikedGenres     []string `json:"disliked_genres"`
-	PreferredLanguages []string `json:"preferred_languages"`
-	AdultContent       bool     `json:"adult_content"`
-	DarkMode           bool     `json:"dark_mode"`
-	AutoplayTrailers   bool     `json:"autoplay_trailers"`
-}
-
 // ─── Handlers ─────────────────────────────────────────────────────────────────
-
-func (h *UserHandler) Register(c *gin.Context) {
-	var req registerRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, apierror.Validation(err.Error(), nil))
-		return
-	}
-
-	user, pair, err := h.svc.Register(c.Request.Context(), domain.RegisterCmd{
-		Email:       req.Email,
-		Password:    req.Password,
-		DisplayName: req.DisplayName,
-		Locale:      req.Locale,
-		Country:     req.Country,
-	})
-	if err != nil {
-		respondError(c, err)
-		return
-	}
-
-	c.JSON(http.StatusCreated, authResponse{
-		User:         toUserResponse(user),
-		AccessToken:  pair.AccessToken,
-		RefreshToken: pair.RefreshToken,
-		ExpiresIn:    pair.ExpiresIn,
-	})
-}
-
-func (h *UserHandler) Login(c *gin.Context) {
-	var req loginRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, apierror.Validation(err.Error(), nil))
-		return
-	}
-
-	user, pair, err := h.svc.Login(c.Request.Context(), domain.LoginCmd{
-		Email:     req.Email,
-		Password:  req.Password,
-		DeviceID:  c.GetHeader("X-Device-ID"),
-		IPAddress: c.ClientIP(),
-		UserAgent: c.Request.UserAgent(),
-	})
-	if err != nil {
-		respondError(c, err)
-		return
-	}
-
-	c.JSON(http.StatusOK, authResponse{
-		User:         toUserResponse(user),
-		AccessToken:  pair.AccessToken,
-		RefreshToken: pair.RefreshToken,
-		ExpiresIn:    pair.ExpiresIn,
-	})
-}
-
-func (h *UserHandler) RefreshTokens(c *gin.Context) {
-	var req refreshRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, apierror.Validation(err.Error(), nil))
-		return
-	}
-
-	pair, err := h.svc.RefreshTokens(
-		c.Request.Context(),
-		req.RefreshToken,
-		c.GetHeader("X-Device-ID"),
-		c.ClientIP(),
-		c.Request.UserAgent(),
-	)
-	if err != nil {
-		respondError(c, err)
-		return
-	}
-
-	c.JSON(http.StatusOK, tokenResponse{
-		AccessToken:  pair.AccessToken,
-		RefreshToken: pair.RefreshToken,
-		ExpiresIn:    pair.ExpiresIn,
-	})
-}
-
-func (h *UserHandler) Logout(c *gin.Context) {
-	jti, _ := c.Get("jwt_jti")
-	sessionID, _ := c.Get("session_id")
-	remainingTTL, _ := c.Get("jwt_remaining_ttl")
-
-	ttl, _ := remainingTTL.(time.Duration)
-	err := h.svc.Logout(
-		c.Request.Context(),
-		jti.(string),
-		sessionID.(string),
-		ttl,
-	)
-	if err != nil {
-		respondError(c, err)
-		return
-	}
-	c.Status(http.StatusNoContent)
-}
-
-func (h *UserHandler) LogoutAll(c *gin.Context) {
-	userID := MustUserID(c)
-	if err := h.svc.LogoutAll(c.Request.Context(), userID); err != nil {
-		respondError(c, err)
-		return
-	}
-	c.Status(http.StatusNoContent)
-}
 
 func (h *UserHandler) GetMe(c *gin.Context) {
 	userID := MustUserID(c)
@@ -280,7 +67,6 @@ func (h *UserHandler) UpdateAccountDetails(c *gin.Context) {
 		respondError(c, apierror.Validation(err.Error(), nil))
 		return
 	}
-
 	userID := MustUserID(c)
 	cmd := domain.UpdateProfileCmd{
 		UserID:     userID,
@@ -294,12 +80,11 @@ func (h *UserHandler) UpdateAccountDetails(c *gin.Context) {
 	if req.Birthdate != nil {
 		t, err := time.Parse("2006-01-02", *req.Birthdate)
 		if err != nil {
-			respondError(c, apierror.Validation("birthdate must be in YYYY-MM-DD format", nil))
+			respondError(c, apierror.Validation("birthdate must be YYYY-MM-DD", nil))
 			return
 		}
 		cmd.Birthdate = &t
 	}
-
 	profile, err := h.svc.UpdateAccountDetails(c.Request.Context(), cmd)
 	if err != nil {
 		respondError(c, err)
@@ -324,7 +109,6 @@ func (h *UserHandler) UpdatePreferences(c *gin.Context) {
 		respondError(c, apierror.Validation(err.Error(), nil))
 		return
 	}
-
 	userID := MustUserID(c)
 	prefs, err := h.svc.UpdatePreferences(c.Request.Context(), domain.UpdatePreferencesCmd{
 		UserID:             userID,
@@ -342,21 +126,9 @@ func (h *UserHandler) UpdatePreferences(c *gin.Context) {
 	c.JSON(http.StatusOK, toPreferencesResponse(prefs))
 }
 
-func (h *UserHandler) ChangePassword(c *gin.Context) {
-	var req changePasswordRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		respondError(c, apierror.Validation(err.Error(), nil))
-		return
-	}
-
-	userID := MustUserID(c)
-	if err := h.svc.ChangePassword(c.Request.Context(), userID, req.OldPassword, req.NewPassword); err != nil {
-		respondError(c, err)
-		return
-	}
-	c.Status(http.StatusNoContent)
-}
-
+// DeleteAccount soft-deletes the account.
+// The handler also calls auth.AuthService.LogoutAll to revoke all sessions —
+// the auth service is injected so the user handler stays auth-independent.
 func (h *UserHandler) DeleteAccount(c *gin.Context) {
 	userID := MustUserID(c)
 	if err := h.svc.SoftDelete(c.Request.Context(), userID); err != nil {
@@ -366,81 +138,62 @@ func (h *UserHandler) DeleteAccount(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-func (h *UserHandler) ListSessions(c *gin.Context) {
-	userID := MustUserID(c)
-	sessions, err := h.svc.ListSessions(c.Request.Context(), userID)
-	if err != nil {
-		respondError(c, err)
-		return
-	}
-	type sessionItem struct {
-		ID        string `json:"id"`
-		DeviceID  string `json:"device_id"`
-		IPAddress string `json:"ip_address"`
-		UserAgent string `json:"user_agent"`
-		CreatedAt string `json:"created_at"`
-		ExpiresAt string `json:"expires_at"`
-	}
-	out := make([]sessionItem, 0, len(sessions))
-	for _, s := range sessions {
-		out = append(out, sessionItem{
-			ID:        s.ID,
-			DeviceID:  s.DeviceID,
-			IPAddress: s.IPAddress,
-			UserAgent: s.UserAgent,
-			CreatedAt: s.CreatedAt.Format(time.RFC3339),
-			ExpiresAt: s.ExpiresAt.Format(time.RFC3339),
-		})
-	}
-	c.JSON(http.StatusOK, gin.H{"sessions": out})
+// ─── DTOs ─────────────────────────────────────────────────────────────────────
+
+type updateProfileRequest struct {
+	AvatarURL  *string `json:"avatar_url"`
+	BannerURL  *string `json:"banner_url"`
+	Bio        *string `json:"bio"`
+	Website    *string `json:"website"`
+	Birthdate  *string `json:"birthdate"`
+	Gender     *string `json:"gender"`
+	Visibility *string `json:"visibility"`
 }
 
-func (h *UserHandler) RevokeSession(c *gin.Context) {
-	userID := MustUserID(c)
-	sessionID := c.Param("session_id")
-
-	if err := h.svc.RevokeSession(c.Request.Context(), userID, sessionID); err != nil {
-		respondError(c, err)
-		return
-	}
-	c.Status(http.StatusNoContent)
+type updatePreferencesRequest struct {
+	PreferredGenres    *[]string `json:"preferred_genres"`
+	DislikedGenres     *[]string `json:"disliked_genres"`
+	PreferredLanguages *[]string `json:"preferred_languages"`
+	AdultContent       *bool     `json:"adult_content"`
+	DarkMode           *bool     `json:"dark_mode"`
+	AutoplayTrailers   *bool     `json:"autoplay_trailers"`
 }
 
-// ─── Middleware helpers ────────────────────────────────────────────────────────
-
-// MustUserID extracts the authenticated user ID from the Gin context.
-// It panics if the auth middleware was not applied (programming error).
-func MustUserID(c *gin.Context) domain.UserID {
-	v, exists := c.Get("user_id")
-	if !exists {
-		panic("auth middleware not applied — user_id not in context")
-	}
-	return domain.UserID(v.(string))
+type userResponse struct {
+	ID            string `json:"id"`
+	Email         string `json:"email"`
+	EmailVerified bool   `json:"email_verified"`
+	Username      string `json:"username,omitempty"`
+	DisplayName   string `json:"display_name"`
+	Role          string `json:"role"`
+	Status        string `json:"status"`
+	Locale        string `json:"locale"`
+	Country       string `json:"country"`
+	CreatedAt     string `json:"created_at"`
 }
 
-// ─── Response helpers ──────────────────────────────────────────────────────────
-
-func respondError(c *gin.Context, err error) {
-	log := logger.FromContext(c.Request.Context())
-
-	ae, ok := apierror.As(err)
-	if !ok {
-		// Unexpected error — wrap it.
-		ae = apierror.Internal("an unexpected error occurred", err)
-	}
-
-	if ae.HTTPStatus >= 500 {
-		log.Error().Err(err).Str("code", string(ae.Code)).Msg("internal error")
-	}
-
-	c.JSON(ae.HTTPStatus, gin.H{
-		"error": gin.H{
-			"code":    ae.Code,
-			"message": ae.Message,
-			"details": ae.Details,
-		},
-	})
+type profileResponse struct {
+	UserID     string `json:"user_id"`
+	AvatarURL  string `json:"avatar_url"`
+	BannerURL  string `json:"banner_url"`
+	Bio        string `json:"bio"`
+	Website    string `json:"website"`
+	Birthdate  string `json:"birthdate,omitempty"`
+	Gender     string `json:"gender"`
+	Visibility string `json:"visibility"`
+	UpdatedAt  string `json:"updated_at"`
 }
+
+type preferencesResponse struct {
+	PreferredGenres    []string `json:"preferred_genres"`
+	DislikedGenres     []string `json:"disliked_genres"`
+	PreferredLanguages []string `json:"preferred_languages"`
+	AdultContent       bool     `json:"adult_content"`
+	DarkMode           bool     `json:"dark_mode"`
+	AutoplayTrailers   bool     `json:"autoplay_trailers"`
+}
+
+// ─── Response helpers ─────────────────────────────────────────────────────────
 
 func toUserResponse(u *domain.User) userResponse {
 	return userResponse{
@@ -492,5 +245,25 @@ func orSlice(s []string) []string {
 	return s
 }
 
-// Suppress unused import warning from strings.
-var _ = strings.TrimSpace
+// MustUserID extracts the authenticated user ID from Gin context.
+func MustUserID(c *gin.Context) domain.UserID {
+	v, exists := c.Get("user_id")
+	if !exists {
+		panic("auth middleware not applied — user_id missing from context")
+	}
+	return domain.UserID(v.(string))
+}
+
+func respondError(c *gin.Context, err error) {
+	log := logger.FromContext(c.Request.Context())
+	ae, ok := apierror.As(err)
+	if !ok {
+		ae = apierror.Internal("an unexpected error occurred", err)
+	}
+	if ae.HTTPStatus >= 500 {
+		log.Error().Err(err).Str("code", string(ae.Code)).Msg("user: internal error")
+	}
+	c.JSON(ae.HTTPStatus, gin.H{
+		"error": gin.H{"code": ae.Code, "message": ae.Message, "details": ae.Details},
+	})
+}

@@ -18,6 +18,7 @@ use (
 	./internal/modules/social
 	./internal/modules/upload
 	./internal/modules/user
+	./internal/modules/auth
 	./internal/modules/watchlist
 
 	./internal/platform
