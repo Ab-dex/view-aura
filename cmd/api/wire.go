@@ -11,6 +11,7 @@ import (
 
 	"github.com/Ab-dex/view-aura/internal/app"
 	"github.com/Ab-dex/view-aura/internal/contract"
+
 	events "github.com/Ab-dex/view-aura/internal/events"
 	auth "github.com/Ab-dex/view-aura/internal/modules/auth"
 	moderation "github.com/Ab-dex/view-aura/internal/modules/moderation"
@@ -27,6 +28,7 @@ import (
 	watchlist "github.com/Ab-dex/view-aura/internal/modules/watchlist"
 	"github.com/Ab-dex/view-aura/internal/platform/config"
 	r2 "github.com/Ab-dex/view-aura/internal/platform/r2"
+	resilience "github.com/Ab-dex/view-aura/internal/platform/resilience"
 	stripeclient "github.com/Ab-dex/view-aura/internal/platform/stripe"
 )
 
@@ -68,24 +70,21 @@ func ProvideAdminMiddleware() contract.AdminMiddleware {
 
 // ProvideNoopDispatcher satisfies the service.Dispatcher interface for local
 // dev and CI. Swap for a real FCM/APNs adapter in production.
-func ProvideNoopDispatcher() notifservice.Dispatcher {
+func ProvideNoopDispatcher() notifservice.NoopDispatcher {
 	return notifservice.NoopDispatcher{}
 }
 
 // InitializeApp builds the full application object via Wire.
 func InitializeApp(ctx context.Context, cfg *config.Config) (*app.App, error) {
 	wire.Build(
-		// Core app infrastructure (DB, Redis, HTTP server, router, middlewares).
 		app.ProviderSet,
 
-		// ── Platform extensions ───────────────────────────────────────────────
 		stripeclient.ProviderSet,
 		r2.ProviderSet,
 		// temporal.ProviderSet,
-		events.ProducerSet,
+		events.ProviderSet,
+		resilience.ProviderSet,
 
-		// Feature modules — each module's ProviderSet is listed here so the
-		// graph is self-contained and auditable in one place.
 		auth.AuthModuleSet,
 		user.UserModuleSet,
 		movie.MovieModuleSet,
@@ -100,13 +99,10 @@ func InitializeApp(ctx context.Context, cfg *config.Config) (*app.App, error) {
 		moderation.ModerationModuleSet,
 
 		ProvideAdminMiddleware,
-		// wire.Bind(new(notifservice.Dispatcher), new(*notifservice.NoopDispatcher)),
+		wire.Bind(new(notifservice.Dispatcher), new(notifservice.NoopDispatcher)),
 		ProvideNoopDispatcher,
 
-		// Module aggregator — converts the individual contract.Module bindings
-		// into the []contract.Module slice that app.New requires.
 		ProvideModules,
 	)
-
 	return nil, nil
 }
