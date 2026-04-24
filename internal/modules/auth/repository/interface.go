@@ -158,3 +158,9 @@ type OAuthStateRepository interface {
 	// Returns nil, nil when absent or expired.
 	GetAndDelete(ctx context.Context, state string) (*domain.OAuthState, error)
 }
+
+type MfaChallengeStore interface {
+	CreateChallenge(ctx context.Context, ch *domain.MFAChallenge) error
+	GetChallenge(ctx context.Context, id string) (*domain.MFAChallenge, error)
+	DeleteChallenge(ctx context.Context, id string) error
+}

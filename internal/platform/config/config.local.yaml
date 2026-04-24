@@ -9,8 +9,11 @@ http:
 db:
   dsn: postgres://viewaura:viewaura@localhost:5432/viewaura?sslmode=disable
 
-redis:
-  addr: localhost:6379
+# redis:
+#   addr: localhost:6379
+
+auth:
+  mfa_encryption_key: 0123456789ABCDEF0123456789ABCDEF
 
 jwt:
   # private_key_path: ../../secrets/jwt_private.pem
@@ -26,10 +29,10 @@ temporal:
   namespace: default
   task_queue: viewaura-main
 
-kafka:
-  brokers: localhost:29092
-  group_id: viewaura-worker
-  security_protocol: PLAINTEXT
+# kafka:
+#   brokers: localhost:29092
+#   group_id: viewaura-worker
+#   security_protocol: PLAINTEXT
 
 log:
   level: debug

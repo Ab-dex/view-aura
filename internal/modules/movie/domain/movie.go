@@ -4,13 +4,16 @@ import (
 	"time"
 
 	apierror "github.com/Ab-dex/view-aura/internal/platform/error"
+	"github.com/google/uuid"
 )
 
 // ─── IDs ─────────────────────────────────────────────────────────────────────
 
-type MovieID string
+type MovieID uuid.UUID
 
-func (id MovieID) String() string { return string(id) }
+func (id MovieID) String() string {
+	return uuid.UUID(id).String()
+}
 
 type PersonID string
 

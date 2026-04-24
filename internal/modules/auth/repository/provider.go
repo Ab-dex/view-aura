@@ -26,11 +26,30 @@ func ProvideVerificationTokenRepository(pool *shareddb.Pool) VerificationTokenRe
 
 // ProvideMFARepository constructs the composed Postgres+Redis MFA repo.
 // The MFA encryption key is sourced from cfg.Auth.MFAEncryptionKey (Vault-injected).
-func ProvideMFARepository(pool *shareddb.Pool, rdb *cache.Client, cfg *config.Config) (MFARepository, error) {
-	return NewMFARepository(pool.Pool, rdb.Client, []byte(cfg.Auth.MFAEncryptionKey))
-}
+func ProvideMFARepository(
+	pool *shareddb.Pool,
+	rdb *cache.Client,
+	cfg *config.Config,
+) (MFARepository, error) {
 
+	var challengeStore MfaChallengeStore
+
+	// 🔵 Redis available → use Redis
+	if rdb != nil && rdb.Client != nil {
+		challengeStore = &redisMFARepo{rdb: rdb.Client}
+	} else {
+		// 🟡 fallback → in-memory
+		challengeStore = NewInMemoryMFAChallengeRepo()
+	}
+
+	return NewMFARepository(pool.Pool, challengeStore, []byte(cfg.Auth.MFAEncryptionKey))
+}
 func ProvideOAuthStateRepository(rdb *cache.Client) OAuthStateRepository {
+
+	if rdb == nil || rdb.Client == nil {
+		return NewInMemoryOAuthStateRepository()
+	}
+
 	return NewOAuthStateRepository(rdb.Client)
 }
 

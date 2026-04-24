@@ -1,8 +1,6 @@
 package events
 
 import (
-	"fmt"
-
 	"github.com/Ab-dex/view-aura/internal/platform/config"
 	"github.com/google/wire"
 )
@@ -25,7 +23,8 @@ func ProvideKafkaConfig(cfg *config.Config) config.KafkaConfig {
 // ProvidePrimaryProducer constructs the raw Kafka producer as *PrimaryProducer.
 func ProvidePrimaryProducer(cfg config.KafkaConfig) (*PrimaryProducer, error) {
 	if cfg.Brokers == "" {
-		return nil, fmt.Errorf("kafka: brokers must not be empty")
+		// return nil, fmt.Errorf("kafka: brokers must not be empty")
+		return nil, nil
 	}
 	p, err := NewProducer(cfg)
 	if err != nil {
@@ -37,7 +36,8 @@ func ProvidePrimaryProducer(cfg config.KafkaConfig) (*PrimaryProducer, error) {
 // ProvideConsumer constructs the Kafka consumer.
 func ProvideConsumer(cfg config.KafkaConfig) (Consumer, error) {
 	if cfg.Brokers == "" {
-		return nil, fmt.Errorf("kafka: brokers must not be empty")
+		// return nil, fmt.Errorf("kafka: brokers must not be empty")
+		return nil, nil
 	}
 	return NewConsumer(cfg)
 }

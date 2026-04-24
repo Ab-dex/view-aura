@@ -104,30 +104,44 @@ func (c *movieCache) ExistsByIMDbID(ctx context.Context, imdbID string) (bool, e
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
 func (c *movieCache) fromCache(ctx context.Context, key string) (*domain.Movie, error) {
+	if c.client == nil {
+		return nil, goredis.Nil
+	}
+
 	b, err := c.client.Get(ctx, key).Bytes()
 	if err != nil {
 		if errors.Is(err, goredis.Nil) {
-			return nil, goredis.Nil // cache miss — not a real error
+			return nil, goredis.Nil // cache miss
 		}
-		return nil, err // Redis error — caller falls through to Postgres
+		return nil, err // Redis error
 	}
+
 	var m domain.Movie
 	if err := json.Unmarshal(b, &m); err != nil {
 		return nil, err
 	}
+
 	return &m, nil
 }
 
 func (c *movieCache) toCache(ctx context.Context, key string, m *domain.Movie) {
+	if c.client == nil {
+		return // Redis not available → silently skip caching
+	}
+
 	b, err := json.Marshal(m)
 	if err != nil {
-		return // serialisation failure is non-fatal
+		return // serialization failure is non-fatal
 	}
-	// Fire-and-forget: cache write failure must never affect the read response.
+
 	_ = c.client.Set(ctx, key, b, movieMetaTTL).Err()
 }
 
 func (c *movieCache) invalidate(ctx context.Context, keySuffixes ...string) {
+	if c.client == nil {
+		return
+	}
+
 	for _, s := range keySuffixes {
 		_ = c.client.Del(ctx, sharedcache.MovieMetaKey(s)).Err()
 	}

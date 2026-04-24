@@ -124,18 +124,18 @@ func scanToken(row pgx.Row) (*domain.VerificationToken, error) {
 // Redis challenge operations to redisMFARepo.
 type mfaRepository struct {
 	pg  *pgMFARepo
-	rdb *redisMFARepo
+	rdb MfaChallengeStore
 }
 
 // NewMFARepository composes the Postgres enrollment store with the Redis
 // challenge store.  encKey must be exactly 32 bytes (AES-256-GCM).
-func NewMFARepository(pool *pgxpool.Pool, rdb redisClient, encKey []byte) (MFARepository, error) {
+func NewMFARepository(pool *pgxpool.Pool, rdb MfaChallengeStore, encKey []byte) (MFARepository, error) {
 	if len(encKey) != 32 {
 		return nil, fmt.Errorf("auth: MFA encryption key must be 32 bytes, got %d", len(encKey))
 	}
 	return &mfaRepository{
 		pg:  &pgMFARepo{pool: pool, encKey: encKey},
-		rdb: &redisMFARepo{rdb: rdb},
+		rdb: rdb,
 	}, nil
 }
 

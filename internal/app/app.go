@@ -73,8 +73,7 @@ func NewRouter(
 	r.Use(gin.HandlerFunc(log))
 
 	// Rate limiting — degrades to no-op when Redis is nil (fail open).
-	var rdbClient interface { /* goredis.UniversalClient */
-	} = nil
+	var rdbClient any = nil
 	if redis != nil {
 		r.Use(middleware.RateLimit(redis.Client, 1000, time.Minute))
 		r.Use(middleware.HTTPCache(redis, 2*time.Minute))

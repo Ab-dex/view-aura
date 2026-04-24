@@ -19,26 +19,26 @@ import (
 type MovieService interface {
 	// Catalog
 	Create(ctx context.Context, cmd domain.CreateMovieCmd) (*domain.Movie, error)
-	GetByID(ctx context.Context, id domain.MovieID) (*MovieDetail, error)
+	GetByID(ctx context.Context, id string) (*MovieDetail, error)
 	GetBySlug(ctx context.Context, slug string) (*MovieDetail, error)
 	Update(ctx context.Context, cmd domain.UpdateMovieCmd) (*domain.Movie, error)
-	Delete(ctx context.Context, id domain.MovieID) error
+	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter domain.MovieFilter) (*MovieListResult, error)
 
 	// Credits
 	AddCredit(ctx context.Context, cmd domain.AddCreditCmd) (*domain.Credit, error)
 	RemoveCredit(ctx context.Context, creditID string) error
-	ListCredits(ctx context.Context, movieID domain.MovieID) ([]*CreditWithPerson, error)
+	ListCredits(ctx context.Context, movieID string) ([]*CreditWithPerson, error)
 
 	// Streaming availability
 	UpsertStreamingLink(ctx context.Context, cmd domain.UpsertStreamingLinkCmd) (*domain.StreamingLink, error)
 	DeleteStreamingLink(ctx context.Context, linkID string) error
-	ListStreamingLinks(ctx context.Context, movieID domain.MovieID, region string) ([]*domain.StreamingLink, error)
+	ListStreamingLinks(ctx context.Context, movieID string, region string) ([]*domain.StreamingLink, error)
 
 	// Filming locations
 	AddFilmingLocation(ctx context.Context, loc *domain.FilmingLocation) (*domain.FilmingLocation, error)
 	DeleteFilmingLocation(ctx context.Context, id string) error
-	ListFilmingLocations(ctx context.Context, movieID domain.MovieID) ([]*domain.FilmingLocation, error)
+	ListFilmingLocations(ctx context.Context, movieID string) ([]*domain.FilmingLocation, error)
 
 	// People / filmography
 	GetPerson(ctx context.Context, id domain.PersonID) (*domain.Person, error)
@@ -122,7 +122,7 @@ func (s *movieService) Create(ctx context.Context, cmd domain.CreateMovieCmd) (*
 	}
 
 	movie := &domain.Movie{
-		ID:            domain.MovieID(uuid.New().String()),
+		ID:            domain.MovieID(uuid.New()),
 		Title:         strings.TrimSpace(cmd.Title),
 		OriginalTitle: strings.TrimSpace(cmd.OriginalTitle),
 		Slug:          generateSlug(cmd.Title, time.Now().Year()),
@@ -159,8 +159,12 @@ func (s *movieService) Create(ctx context.Context, cmd domain.CreateMovieCmd) (*
 	return created, nil
 }
 
-func (s *movieService) GetByID(ctx context.Context, id domain.MovieID) (*MovieDetail, error) {
-	movie, err := s.movies.GetByID(ctx, id)
+func (s *movieService) GetByID(ctx context.Context, id string) (*MovieDetail, error) {
+	parsedID, err := uuid.Parse(id)
+	if err != nil {
+		return nil, apierror.New(400, apierror.CodeValidation, "invalid movie id")
+	}
+	movie, err := s.movies.GetByID(ctx, domain.MovieID(parsedID))
 	if err != nil {
 		return nil, err
 	}
@@ -252,8 +256,12 @@ func (s *movieService) Update(ctx context.Context, cmd domain.UpdateMovieCmd) (*
 	return s.movies.Update(ctx, movie)
 }
 
-func (s *movieService) Delete(ctx context.Context, id domain.MovieID) error {
-	return s.movies.Delete(ctx, id)
+func (s *movieService) Delete(ctx context.Context, id string) error {
+	parsedID, err := uuid.Parse(id)
+	if err != nil {
+		return apierror.New(400, apierror.CodeValidation, "invalid movie id")
+	}
+	return s.movies.Delete(ctx, domain.MovieID(parsedID))
 }
 
 func (s *movieService) List(ctx context.Context, filter domain.MovieFilter) (*MovieListResult, error) {
@@ -295,8 +303,12 @@ func (s *movieService) RemoveCredit(ctx context.Context, creditID string) error 
 	return s.credits.Remove(ctx, creditID)
 }
 
-func (s *movieService) ListCredits(ctx context.Context, movieID domain.MovieID) ([]*CreditWithPerson, error) {
-	rawCredits, err := s.credits.ListByMovie(ctx, movieID)
+func (s *movieService) ListCredits(ctx context.Context, movieID string) ([]*CreditWithPerson, error) {
+	parsedID, err := uuid.Parse(movieID)
+	if err != nil {
+		return nil, apierror.New(400, apierror.CodeValidation, "invalid movie id")
+	}
+	rawCredits, err := s.credits.ListByMovie(ctx, domain.MovieID(parsedID))
 	if err != nil {
 		return nil, err
 	}
@@ -330,8 +342,12 @@ func (s *movieService) DeleteStreamingLink(ctx context.Context, linkID string) e
 	return s.links.Delete(ctx, linkID)
 }
 
-func (s *movieService) ListStreamingLinks(ctx context.Context, movieID domain.MovieID, region string) ([]*domain.StreamingLink, error) {
-	return s.links.ListByMovie(ctx, movieID, region)
+func (s *movieService) ListStreamingLinks(ctx context.Context, movieID string, region string) ([]*domain.StreamingLink, error) {
+	parsedID, err := uuid.Parse(movieID)
+	if err != nil {
+		return nil, apierror.New(400, apierror.CodeValidation, "invalid movie id")
+	}
+	return s.links.ListByMovie(ctx, domain.MovieID(parsedID), region)
 }
 
 // ─── Filming locations ────────────────────────────────────────────────────────
@@ -348,8 +364,12 @@ func (s *movieService) DeleteFilmingLocation(ctx context.Context, id string) err
 	return s.locations.Delete(ctx, id)
 }
 
-func (s *movieService) ListFilmingLocations(ctx context.Context, movieID domain.MovieID) ([]*domain.FilmingLocation, error) {
-	return s.locations.ListByMovie(ctx, movieID)
+func (s *movieService) ListFilmingLocations(ctx context.Context, movieID string) ([]*domain.FilmingLocation, error) {
+	parsedID, err := uuid.Parse(movieID)
+	if err != nil {
+		return nil, apierror.New(400, apierror.CodeValidation, "invalid movie id")
+	}
+	return s.locations.ListByMovie(ctx, domain.MovieID(parsedID))
 }
 
 // ─── People ───────────────────────────────────────────────────────────────────

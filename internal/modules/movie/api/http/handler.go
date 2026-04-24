@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 
 	"github.com/Ab-dex/view-aura/internal/app/middleware"
 	"github.com/Ab-dex/view-aura/internal/modules/movie/domain"
@@ -226,8 +227,8 @@ func (h *MovieHandler) Get(c *gin.Context) {
 		err    error
 	)
 
-	if len(idOrSlug) == 36 {
-		detail, err = h.svc.GetByID(c.Request.Context(), domain.MovieID(idOrSlug))
+	if len(idOrSlug) <= 36 {
+		detail, err = h.svc.GetByID(c.Request.Context(), idOrSlug)
 	} else {
 		detail, err = h.svc.GetBySlug(c.Request.Context(), idOrSlug)
 	}
@@ -290,8 +291,16 @@ func (h *MovieHandler) Update(c *gin.Context) {
 		return
 	}
 
+	paramId := c.Param("id")
+	parsedUUID, err := uuid.Parse(paramId)
+	if err != nil {
+		respondError(c, apierror.Validation("Movie Id must be a valid id", nil))
+	}
+
+	movieID := domain.MovieID(parsedUUID)
+
 	cmd := domain.UpdateMovieCmd{
-		ID:            domain.MovieID(c.Param("id")),
+		ID:            movieID,
 		Title:         req.Title,
 		OriginalTitle: req.OriginalTitle,
 		Synopsis:      req.Synopsis,
@@ -330,7 +339,14 @@ func (h *MovieHandler) Update(c *gin.Context) {
 }
 
 func (h *MovieHandler) Delete(c *gin.Context) {
-	if err := h.svc.Delete(c.Request.Context(), domain.MovieID(c.Param("id"))); err != nil {
+	paramId := c.Param("id")
+	parsedUUID, err := uuid.Parse(paramId)
+	if err != nil {
+		respondError(c, apierror.Validation("Movie Id must be a valid id", nil))
+	}
+
+	movieID := domain.MovieID(parsedUUID)
+	if err := h.svc.Delete(c.Request.Context(), movieID.String()); err != nil {
 		respondError(c, err)
 		return
 	}
@@ -370,7 +386,12 @@ func (h *MovieHandler) ListCredits(c *gin.Context) {
 
 	var movieID domain.MovieID
 	if len(idOrSlug) == 36 {
-		movieID = domain.MovieID(idOrSlug)
+
+		parsedUUID, err := uuid.Parse(idOrSlug)
+		if err != nil {
+			respondError(c, apierror.Validation("Movie Id must be a valid id", nil))
+		}
+		movieID = domain.MovieID(parsedUUID)
 	} else {
 		detail, err := h.svc.GetBySlug(c.Request.Context(), idOrSlug)
 		if err != nil {
@@ -380,7 +401,7 @@ func (h *MovieHandler) ListCredits(c *gin.Context) {
 		movieID = detail.Movie.ID
 	}
 
-	credits, err := h.svc.ListCredits(c.Request.Context(), movieID)
+	credits, err := h.svc.ListCredits(c.Request.Context(), movieID.String())
 	if err != nil {
 		respondError(c, err)
 		return
@@ -395,8 +416,16 @@ func (h *MovieHandler) AddCredit(c *gin.Context) {
 		return
 	}
 
+	paramId := c.Param("id")
+	parsedUUID, err := uuid.Parse(paramId)
+	if err != nil {
+		respondError(c, apierror.Validation("Movie Id must be a valid id", nil))
+	}
+
+	movieID := domain.MovieID(parsedUUID)
+
 	credit, err := h.svc.AddCredit(c.Request.Context(), domain.AddCreditCmd{
-		MovieID:      domain.MovieID(c.Param("id")),
+		MovieID:      movieID,
 		PersonID:     domain.PersonID(req.PersonID),
 		Role:         domain.CreditRole(req.Role),
 		Character:    req.Character,
@@ -432,7 +461,7 @@ func (h *MovieHandler) ListStreamingLinks(c *gin.Context) {
 		return
 	}
 
-	links, err := h.svc.ListStreamingLinks(c.Request.Context(), detail.Movie.ID, region)
+	links, err := h.svc.ListStreamingLinks(c.Request.Context(), detail.Movie.ID.String(), region)
 	if err != nil {
 		respondError(c, err)
 		return
@@ -452,8 +481,16 @@ func (h *MovieHandler) UpsertStreamingLink(c *gin.Context) {
 		return
 	}
 
+	paramId := c.Param("id")
+	parsedUUID, err := uuid.Parse(paramId)
+	if err != nil {
+		respondError(c, apierror.Validation("Movie Id must be a valid id", nil))
+	}
+
+	movieID := domain.MovieID(parsedUUID)
+
 	link, err := h.svc.UpsertStreamingLink(c.Request.Context(), domain.UpsertStreamingLinkCmd{
-		MovieID:    domain.MovieID(c.Param("id")),
+		MovieID:    movieID,
 		Provider:   req.Provider,
 		LinkURL:    req.LinkURL,
 		AccessType: req.AccessType,
@@ -482,7 +519,7 @@ func (h *MovieHandler) ListFilmingLocations(c *gin.Context) {
 		return
 	}
 
-	locs, err := h.svc.ListFilmingLocations(c.Request.Context(), detail.Movie.ID)
+	locs, err := h.svc.ListFilmingLocations(c.Request.Context(), detail.Movie.ID.String())
 	if err != nil {
 		respondError(c, err)
 		return
@@ -508,8 +545,16 @@ func (h *MovieHandler) AddFilmingLocation(c *gin.Context) {
 		return
 	}
 
+	paramId := c.Param("id")
+	parsedUUID, err := uuid.Parse(paramId)
+	if err != nil {
+		respondError(c, apierror.Validation("Movie Id must be a valid id", nil))
+	}
+
+	movieID := domain.MovieID(parsedUUID)
+
 	loc, err := h.svc.AddFilmingLocation(c.Request.Context(), &domain.FilmingLocation{
-		MovieID:     domain.MovieID(c.Param("id")),
+		MovieID:     movieID,
 		Name:        req.Name,
 		Latitude:    req.Latitude,
 		Longitude:   req.Longitude,
@@ -611,7 +656,7 @@ func (h *MovieHandler) SearchPeople(c *gin.Context) {
 
 func (h *MovieHandler) getMovieByIDOrSlug(c *gin.Context, idOrSlug string) (*service.MovieDetail, error) {
 	if len(idOrSlug) == 36 {
-		return h.svc.GetByID(c.Request.Context(), domain.MovieID(idOrSlug))
+		return h.svc.GetByID(c.Request.Context(), idOrSlug)
 	}
 	return h.svc.GetBySlug(c.Request.Context(), idOrSlug)
 }
