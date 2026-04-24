@@ -34,10 +34,11 @@ var _ contract.Module = (*Module)(nil)
 // Module wires together the auth handler and its route registrations.
 type Module struct {
 	Handler *authhttp.AuthHandler
+	Auth    gin.HandlerFunc
 }
 
-func NewModule(h *authhttp.AuthHandler) *Module {
-	return &Module{Handler: h}
+func NewModule(h *authhttp.AuthHandler, auth gin.HandlerFunc) *Module {
+	return &Module{Handler: h, Auth: auth}
 }
 
 // Register mounts all auth routes under the given router.
@@ -51,10 +52,16 @@ func (m *Module) Register(r gin.IRouter) {
 	authGroup.Use(middleware.StrictRateLimit(20, time.Minute))
 
 	m.Handler.RegisterRoutes(authGroup)
+
+	protected := authGroup.Group("")
+	protected.Use(m.Auth)
+
+	m.Handler.RegisterProtectedRoutes(protected)
 }
 
-func ProvideAuthModule(h *authhttp.AuthHandler) contract.AuthModule {
-	return contract.AuthModule{Module: NewModule(h)}
+func ProvideAuthModule(h *authhttp.AuthHandler,
+	auth contract.AuthMiddleware) contract.AuthModule {
+	return contract.AuthModule{Module: NewModule(h, gin.HandlerFunc(auth))}
 }
 
 // AuthModuleSet is the complete Wire provider set for the auth module.

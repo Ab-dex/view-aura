@@ -8,77 +8,205 @@ import (
 
 	"github.com/Ab-dex/view-aura/internal/app/middleware"
 	"github.com/Ab-dex/view-aura/internal/modules/auth/domain"
+	authdomain "github.com/Ab-dex/view-aura/internal/modules/auth/domain"
 	"github.com/Ab-dex/view-aura/internal/modules/auth/service"
 	userdomain "github.com/Ab-dex/view-aura/internal/modules/user/domain"
 	apierror "github.com/Ab-dex/view-aura/internal/platform/error"
 	"github.com/Ab-dex/view-aura/internal/platform/logger"
 )
 
-// AuthHandler exposes all authentication flows as HTTP endpoints.
-// Intentionally separate from UserHandler so auth concerns do not
-// bleed into profile/preference logic.
+// AuthHandler exposes every authentication and session flow over HTTP.
+//
+// Route ownership:
+//   - Public:    register, login, refresh, verify-email, password-reset,
+//     oauth begin/callback, mfa/verify, mfa/email-otp/send
+//   - Protected: logout, logout-all, change-password, verify-email/send,
+//     mfa totp enroll/confirm, mfa disable, sessions list/revoke
 type AuthHandler struct {
 	svc service.AuthService
 }
 
+// NewAuthHandler constructs the handler.
+// authMW is the real JWT validation middleware from contract.AuthMiddleware.
+// It is injected here so the handler is self-contained and testable.
 func NewAuthHandler(svc service.AuthService) *AuthHandler {
 	return &AuthHandler{svc: svc}
 }
 
-// RegisterRoutes mounts all auth routes on the given Gin router group.
-// The caller is responsible for applying rate-limiting at the group level.
-//
-// Route split:
-//   - Public routes: email verification, password reset, OAuth, MFA verify
-//   - Protected routes (auth middleware applied inline): TOTP enroll/confirm,
-//     MFA disable, send-verification-email (requires a valid session)
+// RegisterRoutes mounts all auth routes on the given group.
+// The caller applies rate-limiting at the group level before calling this.
 func (h *AuthHandler) RegisterRoutes(r gin.IRouter) {
-	// ── Public routes ────────────────────────────────────────────────────────
+	// ── Public ───────────────────────────────────────────────────────────────
+	r.POST("/register", middleware.StrictRateLimit(10, time.Minute), h.Register)
+	r.POST("/login", middleware.StrictRateLimit(10, time.Minute), h.Login)
+	r.POST("/refresh", middleware.StrictRateLimit(10, time.Minute), h.RefreshTokens)
 
-	// Email verification — the link in the email has no access token.
-	r.POST("/verify-email/send", h.SendVerificationEmail)
 	r.POST("/verify-email", h.VerifyEmail)
-
-	// Password reset — initiated before the user is logged in.
 	r.POST("/password-reset/request", middleware.StrictRateLimit(5, time.Minute), h.SendPasswordReset)
 	r.POST("/password-reset/confirm", h.ResetPassword)
 
-	// OAuth2 social login — the callback arrives from the provider, no token.
 	r.GET("/oauth/:provider/begin", h.OAuthBegin)
 	r.GET("/oauth/:provider/callback", h.OAuthCallback)
 
-	// MFA second-factor — called during login before a full session is issued.
 	r.POST("/mfa/verify", h.VerifyMFA)
 	r.POST("/mfa/email-otp/send", middleware.StrictRateLimit(5, time.Minute), h.SendMFAEmailOTP)
 
-	// ── Protected routes — require a valid access token ──────────────────────
-	protected := r.Group("")
-	protected.Use(gin.HandlerFunc(authMiddlewarePlaceholder))
-
-	protected.POST("/mfa/totp/enroll", h.EnrollTOTP)
-	protected.POST("/mfa/totp/confirm", h.ConfirmTOTP)
-	protected.DELETE("/mfa", h.DisableMFA)
 }
 
-// authMiddlewarePlaceholder is satisfied by the app-level auth middleware.
-// The module.go passes the real contract.AuthMiddleware via the protected group.
-// This constant keeps the handler self-contained; wire replaces it at app init.
-//
-// In practice the protected group's Use() is called in module.Register() with
-// the real middleware — this variable is never executed.
-var authMiddlewarePlaceholder = func(c *gin.Context) { c.Next() }
+func (h *AuthHandler) RegisterProtectedRoutes(r gin.IRouter) {
+
+	r.POST("/logout", h.Logout)
+	r.POST("/logout/all", h.LogoutAll)
+	r.POST("/verify-email/send", h.SendVerificationEmail)
+	r.PUT("/me/password", h.ChangePassword)
+
+	r.POST("/mfa/totp/enroll", h.EnrollTOTP)
+	r.POST("/mfa/totp/confirm", h.ConfirmTOTP)
+	r.DELETE("/mfa", h.DisableMFA)
+
+	r.GET("/me/sessions", h.ListSessions)
+	r.DELETE("/me/sessions/:id", h.RevokeSession)
+}
+
+// ─── Credential-based auth ────────────────────────────────────────────────────
+
+func (h *AuthHandler) Register(c *gin.Context) {
+	var req struct {
+		Email       string `json:"email"        binding:"required,email"`
+		Password    string `json:"password"     binding:"required,min=8"`
+		DisplayName string `json:"display_name" binding:"required,min=2"`
+		Locale      string `json:"locale"`
+		Country     string `json:"country"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, apierror.Validation(err.Error(), nil))
+		return
+	}
+	user, pair, err := h.svc.Register(c.Request.Context(), authdomain.RegisterCmd{
+		Email:       req.Email,
+		Password:    req.Password,
+		DisplayName: req.DisplayName,
+		Locale:      req.Locale,
+		Country:     req.Country,
+	})
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusCreated, newAuthResponse(user, pair))
+}
+
+func (h *AuthHandler) Login(c *gin.Context) {
+	var req struct {
+		Email    string `json:"email"    binding:"required,email"`
+		Password string `json:"password" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, apierror.Validation(err.Error(), "Invalid Request body"))
+		return
+	}
+
+	user, pair, err := h.svc.Login(c.Request.Context(), authdomain.LoginCmd{
+		Email:     req.Email,
+		Password:  req.Password,
+		DeviceID:  c.GetHeader("X-Device-ID"),
+		IPAddress: c.ClientIP(),
+		UserAgent: c.Request.UserAgent(),
+	})
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, newAuthResponse(user, pair))
+}
+
+func (h *AuthHandler) RefreshTokens(c *gin.Context) {
+	var req struct {
+		RefreshToken string `json:"refresh_token" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, apierror.Validation(err.Error(), nil))
+		return
+	}
+	pair, err := h.svc.RefreshTokens(
+		c.Request.Context(),
+		req.RefreshToken,
+		c.GetHeader("X-Device-ID"),
+		c.ClientIP(),
+		c.Request.UserAgent(),
+	)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"access_token":  pair.AccessToken,
+		"refresh_token": pair.RefreshToken,
+		"expires_in":    pair.ExpiresIn,
+	})
+}
+
+func (h *AuthHandler) Logout(c *gin.Context) {
+	jti, _ := c.Get(middleware.ContextKeyJTI)
+	sessionID, _ := c.Get(middleware.ContextKeySessionID)
+	remainingTTL, _ := c.Get(middleware.ContextKeyRemainingTTL)
+
+	jtiStr, _ := jti.(string)
+	sessionStr, _ := sessionID.(string)
+	ttl, _ := remainingTTL.(time.Duration)
+
+	if err := h.svc.Logout(c.Request.Context(), jtiStr, sessionStr, ttl); err != nil {
+		respondError(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+func (h *AuthHandler) LogoutAll(c *gin.Context) {
+	userID := mustUserID(c)
+	if userID == "" {
+		return
+	}
+	if err := h.svc.LogoutAll(c.Request.Context(), userdomain.UserID(userID)); err != nil {
+		respondError(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+func (h *AuthHandler) ChangePassword(c *gin.Context) {
+	var req struct {
+		OldPassword string `json:"old_password" binding:"required"`
+		NewPassword string `json:"new_password" binding:"required,min=8"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, apierror.Validation(err.Error(), nil))
+		return
+	}
+	userID := mustUserID(c)
+	if userID == "" {
+		return
+	}
+	if err := h.svc.ChangePassword(c.Request.Context(), authdomain.ChangePasswordCmd{
+		UserID:      userID,
+		OldPassword: req.OldPassword,
+		NewPassword: req.NewPassword,
+	}); err != nil {
+		respondError(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
 
 // ─── Email verification ───────────────────────────────────────────────────────
 
-// SendVerificationEmail requires an authenticated session because it reads the
-// user's current email from the JWT claims.
 func (h *AuthHandler) SendVerificationEmail(c *gin.Context) {
 	userID, email := mustIdentity(c)
 	if userID == "" {
-		return // mustIdentity already aborted
+		return
 	}
-	if err := h.svc.SendVerificationEmail(c.Request.Context(), domain.SendVerificationEmailCmd{
-		UserID:    string(userID),
+	if err := h.svc.SendVerificationEmail(c.Request.Context(), authdomain.SendVerificationEmailCmd{
+		UserID:    userID,
 		Email:     email,
 		IPAddress: c.ClientIP(),
 		UserAgent: c.Request.UserAgent(),
@@ -97,7 +225,7 @@ func (h *AuthHandler) VerifyEmail(c *gin.Context) {
 		respondError(c, apierror.Validation("token is required", nil))
 		return
 	}
-	if err := h.svc.VerifyEmail(c.Request.Context(), domain.VerifyEmailCmd{
+	if err := h.svc.VerifyEmail(c.Request.Context(), authdomain.VerifyEmailCmd{
 		Token:     req.Token,
 		IPAddress: c.ClientIP(),
 	}); err != nil {
@@ -113,9 +241,9 @@ func (h *AuthHandler) SendPasswordReset(c *gin.Context) {
 	var req struct {
 		Email string `json:"email"`
 	}
-	// Deliberately ignore bind errors — always return 204 to prevent enumeration.
+	// Always 204 — never reveal whether the email is registered.
 	_ = c.ShouldBindJSON(&req)
-	_ = h.svc.SendPasswordReset(c.Request.Context(), domain.SendPasswordResetCmd{
+	_ = h.svc.SendPasswordReset(c.Request.Context(), authdomain.SendPasswordResetCmd{
 		Email:     req.Email,
 		IPAddress: c.ClientIP(),
 		UserAgent: c.Request.UserAgent(),
@@ -132,7 +260,7 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 		respondError(c, apierror.Validation("token and new_password are required", nil))
 		return
 	}
-	user, pair, err := h.svc.ResetPassword(c.Request.Context(), domain.ResetPasswordCmd{
+	user, pair, err := h.svc.ResetPassword(c.Request.Context(), authdomain.ResetPasswordCmd{
 		Token:       req.Token,
 		NewPassword: req.NewPassword,
 		IPAddress:   c.ClientIP(),
@@ -187,12 +315,12 @@ func (h *AuthHandler) OAuthCallback(c *gin.Context) {
 // ─── TOTP MFA (protected) ─────────────────────────────────────────────────────
 
 func (h *AuthHandler) EnrollTOTP(c *gin.Context) {
-	userID, _ := mustIdentity(c)
+	userID := mustUserID(c)
 	if userID == "" {
 		return
 	}
-	result, err := h.svc.EnrollTOTP(c.Request.Context(), domain.EnrollTOTPCmd{
-		UserID: string(userID),
+	result, err := h.svc.EnrollTOTP(c.Request.Context(), authdomain.EnrollTOTPCmd{
+		UserID: userID, // EnrollTOTPCmd.UserID is string
 	})
 	if err != nil {
 		respondError(c, err)
@@ -212,12 +340,12 @@ func (h *AuthHandler) ConfirmTOTP(c *gin.Context) {
 		respondError(c, apierror.Validation("code is required", nil))
 		return
 	}
-	userID, _ := mustIdentity(c)
+	userID := mustUserID(c)
 	if userID == "" {
 		return
 	}
-	codes, err := h.svc.ConfirmTOTP(c.Request.Context(), domain.VerifyTOTPEnrollmentCmd{
-		UserID: string(userID),
+	codes, err := h.svc.ConfirmTOTP(c.Request.Context(), authdomain.VerifyTOTPEnrollmentCmd{
+		UserID: userID,
 		Code:   req.Code,
 	})
 	if err != nil {
@@ -238,11 +366,12 @@ func (h *AuthHandler) DisableMFA(c *gin.Context) {
 		respondError(c, apierror.Validation("password is required", nil))
 		return
 	}
-	userID, _ := mustIdentity(c)
+	userID := mustUserID(c)
 	if userID == "" {
 		return
 	}
-	if err := h.svc.DisableMFA(c.Request.Context(), domain.DisableMFACmd{
+	// DisableMFACmd.UserID is string in auth/domain
+	if err := h.svc.DisableMFA(c.Request.Context(), authdomain.DisableMFACmd{
 		UserID:   userID,
 		Password: req.Password,
 	}); err != nil {
@@ -252,7 +381,7 @@ func (h *AuthHandler) DisableMFA(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// ─── MFA verification (second-factor step during login) ───────────────────────
+// ─── MFA verify (public — second factor before session is issued) ─────────────
 
 func (h *AuthHandler) VerifyMFA(c *gin.Context) {
 	var req struct {
@@ -264,10 +393,11 @@ func (h *AuthHandler) VerifyMFA(c *gin.Context) {
 		respondError(c, apierror.Validation("user_id, code, and method are required", nil))
 		return
 	}
-	user, pair, err := h.svc.VerifyMFA(c.Request.Context(), domain.VerifyMFACmd{
-		UserID:    userdomain.UserID(req.UserID),
+	user, pair, err := h.svc.VerifyMFA(c.Request.Context(), authdomain.VerifyMFACmd{
+		// VerifyMFACmd in auth/domain uses userdomain.UserID
+		UserID:    (req.UserID),
 		Code:      req.Code,
-		Method:    domain.MFAMethod(req.Method),
+		Method:    authdomain.MFAMethod(req.Method),
 		DeviceID:  c.GetHeader("X-Device-ID"),
 		IPAddress: c.ClientIP(),
 		UserAgent: c.Request.UserAgent(),
@@ -294,6 +424,52 @@ func (h *AuthHandler) SendMFAEmailOTP(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// ─── Sessions (protected) ─────────────────────────────────────────────────────
+
+func (h *AuthHandler) ListSessions(c *gin.Context) {
+	userID := mustUserID(c)
+	if userID == "" {
+		return
+	}
+	sessions, err := h.svc.ListSessions(c.Request.Context(), userdomain.UserID(userID))
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	type sessionItem struct {
+		ID        string `json:"id"`
+		DeviceID  string `json:"device_id"`
+		IPAddress string `json:"ip_address"`
+		UserAgent string `json:"user_agent"`
+		CreatedAt string `json:"created_at"`
+		ExpiresAt string `json:"expires_at"`
+	}
+	out := make([]sessionItem, 0, len(sessions))
+	for _, s := range sessions {
+		out = append(out, sessionItem{
+			ID:        s.ID,
+			DeviceID:  s.DeviceID,
+			IPAddress: s.IPAddress,
+			UserAgent: s.UserAgent,
+			CreatedAt: s.CreatedAt.Format(time.RFC3339),
+			ExpiresAt: s.ExpiresAt.Format(time.RFC3339),
+		})
+	}
+	c.JSON(http.StatusOK, gin.H{"sessions": out})
+}
+
+func (h *AuthHandler) RevokeSession(c *gin.Context) {
+	userID := mustUserID(c)
+	if userID == "" {
+		return
+	}
+	if err := h.svc.RevokeSession(c.Request.Context(), userdomain.UserID(userID), c.Param("id")); err != nil {
+		respondError(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
 // ─── Response types ───────────────────────────────────────────────────────────
 
 type authResponse struct {
@@ -312,13 +488,15 @@ type userSummary struct {
 	CreatedAt     time.Time `json:"created_at"`
 }
 
-func newAuthResponse(user *userdomain.User, pair *domain.TokenPair) authResponse {
+// newAuthResponse builds the auth response from the service return values.
+// user is *userdomain.User; pair is *authdomain.TokenPair.
+func newAuthResponse(user *userdomain.User, pair *authdomain.TokenPair) authResponse {
 	return authResponse{
 		AccessToken:  pair.AccessToken,
 		RefreshToken: pair.RefreshToken,
 		ExpiresIn:    pair.ExpiresIn,
 		User: userSummary{
-			ID:            string(user.ID),
+			ID:            user.ID.String(),
 			Email:         user.Email,
 			DisplayName:   user.DisplayName,
 			Role:          string(user.Role),
@@ -330,29 +508,39 @@ func newAuthResponse(user *userdomain.User, pair *domain.TokenPair) authResponse
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-// mustIdentity extracts the authenticated user ID and email from the Gin context.
-// If the auth middleware was not applied it aborts with 401 and returns zero values.
-func mustIdentity(c *gin.Context) (userdomain.UserID, string) {
-	v, exists := c.Get("user_id")
+// mustUserID extracts the authenticated user ID string from the Gin context.
+// Returns "" and aborts with 401 when the auth middleware was not applied.
+// Returns a plain string — callers cast to userdomain.UserID where needed.
+func mustUserID(c *gin.Context) string {
+	v, exists := c.Get(middleware.ContextKeyUserID)
+	if !exists {
+		respondError(c, apierror.ErrTokenInvalid)
+		return ""
+	}
+	id, _ := v.(string)
+	return id
+}
+
+// mustIdentity returns (userID string, email string) from the Gin context.
+// Aborts with 401 and returns ("", "") when the token is missing.
+func mustIdentity(c *gin.Context) (string, string) {
+	v, exists := c.Get(middleware.ContextKeyUserID)
 	if !exists {
 		respondError(c, apierror.ErrTokenInvalid)
 		return "", ""
 	}
+	userID, _ := v.(string)
 	email, _ := c.Get("email")
 	emailStr, _ := email.(string)
-	return userdomain.UserID(v.(string)), emailStr
+	return userID, emailStr
 }
 
-// respondError maps domain errors to HTTP responses using the standard
-// apierror pattern used by every other module handler.
 func respondError(c *gin.Context, err error) {
 	log := logger.FromContext(c.Request.Context())
-
 	ae, ok := apierror.As(err)
 	if !ok {
 		ae = apierror.Internal("an unexpected error occurred", err)
 	}
-
 	if ae.HTTPStatus >= 500 {
 		log.Error().Err(err).Str("code", string(ae.Code)).Msg("auth: internal error")
 	}

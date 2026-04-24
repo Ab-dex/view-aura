@@ -90,6 +90,19 @@ type UserPreferences struct {
 	UpdatedAt          time.Time
 }
 
+// UserSession represents a single authenticated session persisted for audit.
+type UserSession struct {
+	ID               string
+	UserID           UserID
+	DeviceID         string
+	IPAddress        string
+	UserAgent        string
+	RefreshTokenHash string
+	CreatedAt        time.Time
+	ExpiresAt        time.Time
+	RevokedAt        *time.Time
+}
+
 // ─── Commands ─────────────────────────────────────────────────────────────────
 
 // UpdateProfileCmd carries mutable profile fields.

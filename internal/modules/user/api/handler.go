@@ -37,6 +37,8 @@ func (h *UserHandler) RegisterProtectedRoutes(r gin.IRouter) {
 	r.GET("/me/preferences", h.GetPreferences)
 	r.PATCH("/me/preferences", h.UpdatePreferences)
 	r.DELETE("/me", h.DeleteAccount)
+	r.GET("/me/profile", h.GetProfile)
+	r.PATCH("/me/profile", h.UpdateProfile)
 }
 
 // ─── Handlers ─────────────────────────────────────────────────────────────────
@@ -54,6 +56,50 @@ func (h *UserHandler) GetMe(c *gin.Context) {
 func (h *UserHandler) GetAccountDetails(c *gin.Context) {
 	userID := MustUserID(c)
 	profile, err := h.svc.GetAccountDetails(c.Request.Context(), userID)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, toProfileResponse(profile))
+}
+
+func (h *UserHandler) GetProfile(c *gin.Context) {
+	userID := mustUserID(c)
+	profile, err := h.svc.GetProfile(c.Request.Context(), userID)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, toProfileResponse(profile))
+}
+
+func (h *UserHandler) UpdateProfile(c *gin.Context) {
+	var req updateProfileRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, apierror.Validation(err.Error(), nil))
+		return
+	}
+
+	userID := mustUserID(c)
+	cmd := domain.UpdateProfileCmd{
+		UserID:     userID,
+		AvatarURL:  req.AvatarURL,
+		BannerURL:  req.BannerURL,
+		Bio:        req.Bio,
+		Website:    req.Website,
+		Gender:     req.Gender,
+		Visibility: req.Visibility,
+	}
+	if req.Birthdate != nil {
+		t, err := time.Parse("2006-01-02", *req.Birthdate)
+		if err != nil {
+			respondError(c, apierror.Validation("birthdate must be in YYYY-MM-DD format", nil))
+			return
+		}
+		cmd.Birthdate = &t
+	}
+
+	profile, err := h.svc.UpdateProfile(c.Request.Context(), cmd)
 	if err != nil {
 		respondError(c, err)
 		return
@@ -194,6 +240,16 @@ type preferencesResponse struct {
 }
 
 // ─── Response helpers ─────────────────────────────────────────────────────────
+
+// mustUserID extracts the authenticated user ID from the Gin context.
+// It panics if the auth middleware was not applied (programming error).
+func mustUserID(c *gin.Context) domain.UserID {
+	v, exists := c.Get("user_id")
+	if !exists {
+		panic("auth middleware not applied — user_id not in context")
+	}
+	return domain.UserID(v.(string))
+}
 
 func toUserResponse(u *domain.User) userResponse {
 	return userResponse{

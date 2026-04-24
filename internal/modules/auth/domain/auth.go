@@ -240,7 +240,7 @@ type ResetPasswordCmd struct {
 }
 
 type ChangePasswordCmd struct {
-	UserID      userdomain.UserID
+	UserID      string
 	OldPassword string
 	NewPassword string
 }
@@ -257,7 +257,7 @@ type VerifyTOTPEnrollmentCmd struct {
 
 // VerifyMFACmd completes the second-factor step after first-factor auth.
 type VerifyMFACmd struct {
-	UserID    userdomain.UserID
+	UserID    string
 	Code      string
 	Method    MFAMethod
 	DeviceID  string
@@ -266,7 +266,7 @@ type VerifyMFACmd struct {
 }
 
 type DisableMFACmd struct {
-	UserID   userdomain.UserID
+	UserID   string
 	Password string
 }
 

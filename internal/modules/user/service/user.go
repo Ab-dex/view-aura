@@ -13,10 +13,14 @@ import (
 // have been moved to auth/service.AuthService where they belong.
 type UserService interface {
 	GetByID(ctx context.Context, id domain.UserID) (*domain.User, error)
+	GetProfile(ctx context.Context, userID domain.UserID) (*domain.UserProfile, error)
 	GetAccountDetails(ctx context.Context, userID domain.UserID) (*domain.UserProfile, error)
 	UpdateAccountDetails(ctx context.Context, cmd domain.UpdateProfileCmd) (*domain.UserProfile, error)
+	UpdateProfile(ctx context.Context, cmd domain.UpdateProfileCmd) (*domain.UserProfile, error)
 	GetPreferences(ctx context.Context, userID domain.UserID) (*domain.UserPreferences, error)
 	UpdatePreferences(ctx context.Context, cmd domain.UpdatePreferencesCmd) (*domain.UserPreferences, error)
+	// RevokeSession(ctx context.Context, userID domain.UserID, sessionID string) error
+	// ListSessions(ctx context.Context, userID domain.UserID) ([]*domain.UserSession, error)
 	SoftDelete(ctx context.Context, userID domain.UserID) error
 }
 
@@ -36,6 +40,34 @@ func NewUserService(
 
 func (s *userService) GetByID(ctx context.Context, id domain.UserID) (*domain.User, error) {
 	return s.users.GetByID(ctx, id)
+}
+
+func (s *userService) GetProfile(ctx context.Context, userID domain.UserID) (*domain.UserProfile, error) {
+	if _, err := s.users.GetByID(ctx, userID); err != nil {
+		return nil, err
+	}
+	return s.profiles.GetByUserID(ctx, userID)
+}
+
+func (s *userService) UpdateProfile(ctx context.Context, cmd domain.UpdateProfileCmd) (*domain.UserProfile, error) {
+	existing, err := s.profiles.GetByUserID(ctx, cmd.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	applyIfSet(cmd.AvatarURL, &existing.AvatarURL)
+	applyIfSet(cmd.BannerURL, &existing.BannerURL)
+	applyIfSet(cmd.Bio, &existing.Bio)
+	applyIfSet(cmd.Website, &existing.Website)
+	if cmd.Birthdate != nil {
+		existing.Birthdate = cmd.Birthdate
+	}
+	applyIfSet(cmd.Gender, &existing.Gender)
+	if cmd.Visibility != nil {
+		existing.Visibility = domain.Visibility(*cmd.Visibility)
+	}
+
+	return s.profiles.Upsert(ctx, existing)
 }
 
 func (s *userService) GetAccountDetails(ctx context.Context, userID domain.UserID) (*domain.UserProfile, error) {

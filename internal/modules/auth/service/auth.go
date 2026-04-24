@@ -302,7 +302,7 @@ func (s *authService) ChangePassword(ctx context.Context, cmd domain.ChangePassw
 	if err := validatePassword(cmd.NewPassword); err != nil {
 		return err
 	}
-	user, err := s.users.GetByID(ctx, cmd.UserID)
+	user, err := s.users.GetByID(ctx, userdomain.UserID(cmd.UserID))
 	if err != nil {
 		return err
 	}
@@ -322,7 +322,7 @@ func (s *authService) ChangePassword(ctx context.Context, cmd domain.ChangePassw
 	if err := s.authProviders.Link(ctx, ap); err != nil {
 		return apierror.Internal("update password hash", err)
 	}
-	return s.sessions.RevokeAllForUser(ctx, cmd.UserID)
+	return s.sessions.RevokeAllForUser(ctx, userdomain.UserID(cmd.UserID))
 }
 
 // ─── Email verification ───────────────────────────────────────────────────────
@@ -603,7 +603,7 @@ func (s *authService) ConfirmTOTP(ctx context.Context, cmd domain.VerifyTOTPEnro
 }
 
 func (s *authService) DisableMFA(ctx context.Context, cmd domain.DisableMFACmd) error {
-	user, err := s.users.GetByID(ctx, cmd.UserID)
+	user, err := s.users.GetByID(ctx, userdomain.UserID(cmd.UserID))
 	if err != nil {
 		return err
 	}
@@ -614,15 +614,15 @@ func (s *authService) DisableMFA(ctx context.Context, cmd domain.DisableMFACmd) 
 	if err := bcrypt.CompareHashAndPassword([]byte(*ap.AccessToken), []byte(cmd.Password)); err != nil {
 		return apierror.ErrInvalidCredentials
 	}
-	if err := s.mfa.DeleteEnrollment(ctx, cmd.UserID.String()); err != nil {
+	if err := s.mfa.DeleteEnrollment(ctx, cmd.UserID); err != nil {
 		return fmt.Errorf("auth: delete mfa enrollment: %w", err)
 	}
-	logger.FromContext(ctx).Info().Str("user_id", cmd.UserID.String()).Msg("auth: MFA disabled")
+	logger.FromContext(ctx).Info().Str("user_id", cmd.UserID).Msg("auth: MFA disabled")
 	return nil
 }
 
 func (s *authService) VerifyMFA(ctx context.Context, cmd domain.VerifyMFACmd) (*userdomain.User, *domain.TokenPair, error) {
-	enrollment, err := s.mfa.GetEnrollment(ctx, cmd.UserID.String())
+	enrollment, err := s.mfa.GetEnrollment(ctx, cmd.UserID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -643,7 +643,7 @@ func (s *authService) VerifyMFA(ctx context.Context, cmd domain.VerifyMFACmd) (*
 		}
 	case domain.MFAMethodEmail:
 		record, err := s.verifyTokens.GetByHash(ctx, hashToken(cmd.Code))
-		if err != nil || !record.IsUsable() || record.UserID != cmd.UserID.String() {
+		if err != nil || !record.IsUsable() || record.UserID != cmd.UserID {
 			return nil, nil, apierror.New(401, "MFA_CODE_INVALID", "OTP is invalid or expired")
 		}
 		_ = s.verifyTokens.MarkRedeemed(ctx, record.ID)
@@ -654,7 +654,7 @@ func (s *authService) VerifyMFA(ctx context.Context, cmd domain.VerifyMFACmd) (*
 	}
 	go func() { _ = s.mfa.UpdateLastUsed(context.Background(), enrollment.ID) }()
 
-	user, err := s.users.GetByID(ctx, cmd.UserID)
+	user, err := s.users.GetByID(ctx, userdomain.UserID(cmd.UserID))
 	if err != nil {
 		return nil, nil, err
 	}
