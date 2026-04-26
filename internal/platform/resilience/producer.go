@@ -47,6 +47,10 @@ type ResilientProducer struct {
 //   - rdb:     *cache.Client.Client — pass nil when Redis is unconfigured
 //   - logDir:  directory for Tier 3 log files (defaults to "logs")
 func NewResilientProducer(primary events.Producer, rdb goredis.UniversalClient, logDir string) *ResilientProducer {
+	if primary == nil {
+		panic("primary producer cannot be nil")
+	}
+
 	return &ResilientProducer{
 		primary: primary,
 		breaker: NewInProcessBreaker("kafka", 5, 30*time.Second),
@@ -57,6 +61,13 @@ func NewResilientProducer(primary events.Producer, rdb goredis.UniversalClient, 
 
 // Publish implements events.Producer.
 func (p *ResilientProducer) Publish(ctx context.Context, topic, eventType string, payload any) error {
+	if p == nil || isNilPrimary(p.primary) {
+		log.Warn().
+			Str("topic", topic).
+			Str("event_type", eventType).
+			Msg("resilient_producer: primary missing — skipping publish")
+		return fmt.Errorf("resilient_producer: all delivery tiers failed for topic=%s event=%s", topic, eventType)
+	}
 	// ── Tier 1: Kafka ────────────────────────────────────────────────────────
 	if p.breaker.Allow() {
 		err := p.primary.Publish(ctx, topic, eventType, payload)
@@ -97,8 +108,9 @@ func (p *ResilientProducer) Publish(ctx context.Context, topic, eventType string
 		Str("event_type", eventType).
 		Msg("resilient_producer: event written to file outbox (kafka + redis both unavailable)")
 
-	// Return nil — the caller's request should not fail because Kafka is down.
+	// Return nil — the caller's request should not fail because Kafka is down but for now, it should send direct error especially useful for this case of email.
 	// The event will be replayed by the OutboxWorker or by ops using kafka-replay.
+
 	return nil
 }
 
@@ -133,4 +145,18 @@ func (p *ResilientProducer) pushToRedis(ctx context.Context, topic, eventType st
 		return fmt.Errorf("resilient_producer: redis pipeline: %w", err)
 	}
 	return nil
+}
+
+func isNilPrimary(p events.Producer) bool {
+	if p == nil {
+		return true
+	}
+
+	// detect typed nil inside interface
+	switch v := p.(type) {
+	case *events.PrimaryProducer:
+		return v == nil
+	}
+
+	return false
 }

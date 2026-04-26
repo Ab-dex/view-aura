@@ -201,6 +201,9 @@ type OAuthUserInfo struct {
 type RegisterCmd struct {
 	Email       string
 	Password    string
+	FirstName   string
+	LastName    string
+	OtherNames  *string
 	DisplayName string
 	Locale      string
 	Country     string

@@ -7,7 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/Ab-dex/view-aura/internal/app/middleware"
-	"github.com/Ab-dex/view-aura/internal/modules/auth/domain"
 	authdomain "github.com/Ab-dex/view-aura/internal/modules/auth/domain"
 	"github.com/Ab-dex/view-aura/internal/modules/auth/service"
 	userdomain "github.com/Ab-dex/view-aura/internal/modules/user/domain"
@@ -75,6 +74,9 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		Email       string `json:"email"        binding:"required,email"`
 		Password    string `json:"password"     binding:"required,min=8"`
 		DisplayName string `json:"display_name" binding:"required,min=2"`
+		FirstName   string `json:"first_name" binding:"required,min=2"`
+		LastName    string `json:"last_name" binding:"required,min=2"`
+		OtherNames  string `json:"other_names"`
 		Locale      string `json:"locale"`
 		Country     string `json:"country"`
 	}
@@ -86,6 +88,9 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		Email:       req.Email,
 		Password:    req.Password,
 		DisplayName: req.DisplayName,
+		FirstName:   req.FirstName,
+		LastName:    req.LastName,
+		OtherNames:  &req.OtherNames,
 		Locale:      req.Locale,
 		Country:     req.Country,
 	})
@@ -280,8 +285,8 @@ func (h *AuthHandler) OAuthBegin(c *gin.Context) {
 		respondError(c, apierror.Validation("redirect_uri is required", nil))
 		return
 	}
-	result, err := h.svc.OAuthBegin(c.Request.Context(), domain.OAuthBeginCmd{
-		Provider:    domain.AuthProvider(c.Param("provider")),
+	result, err := h.svc.OAuthBegin(c.Request.Context(), authdomain.OAuthBeginCmd{
+		Provider:    authdomain.AuthProvider(c.Param("provider")),
 		RedirectURI: redirectURI,
 	})
 	if err != nil {
@@ -297,8 +302,8 @@ func (h *AuthHandler) OAuthCallback(c *gin.Context) {
 		respondError(c, apierror.Validation("code and state are required", nil))
 		return
 	}
-	user, pair, err := h.svc.OAuthCallback(c.Request.Context(), domain.OAuthCallbackCmd{
-		Provider:  domain.AuthProvider(c.Param("provider")),
+	user, pair, err := h.svc.OAuthCallback(c.Request.Context(), authdomain.OAuthCallbackCmd{
+		Provider:  authdomain.AuthProvider(c.Param("provider")),
 		Code:      code,
 		State:     state,
 		DeviceID:  c.GetHeader("X-Device-ID"),

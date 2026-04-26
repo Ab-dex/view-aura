@@ -22,6 +22,7 @@ import (
 	userdomain "github.com/Ab-dex/view-aura/internal/modules/user/domain"
 	userrepo "github.com/Ab-dex/view-aura/internal/modules/user/repository"
 	"github.com/Ab-dex/view-aura/internal/platform/config"
+	shareddb "github.com/Ab-dex/view-aura/internal/platform/db"
 	apierror "github.com/Ab-dex/view-aura/internal/platform/error"
 	"github.com/Ab-dex/view-aura/internal/platform/logger"
 )
@@ -86,6 +87,7 @@ type authService struct {
 	pub            events.Producer
 	appBaseURL     string
 	jwt            config.JWTConfig
+	tx             shareddb.TxManager
 }
 
 func NewAuthService(
@@ -102,6 +104,7 @@ func NewAuthService(
 	tokens TokenService,
 	notifier notifservice.NotificationSender,
 	pub events.Producer,
+	tx shareddb.TxManager,
 	cfg *config.Config,
 ) AuthService {
 	return &authService{
@@ -111,7 +114,75 @@ func NewAuthService(
 		oauthProviders: oauthProviders,
 		tokens:         tokens, notifier: notifier, pub: pub,
 		appBaseURL: cfg.Auth.BaseURL, jwt: cfg.JWT,
+		tx: tx,
 	}
+}
+
+// ─── registrationPublisher ────────────────────────────────────────────────────
+
+// registrationPublisher tries Kafka first, then falls back to sending the
+// verification email directly via the notifier when Kafka is unavailable.
+//
+// This mirrors the FallbackPublisher pattern: the user must always receive
+// their verification email regardless of whether the event bus is reachable.
+// When Kafka is healthy the notification-service consumer handles the email;
+// when it is down we send it inline so the user is never left waiting.
+
+type registrationPublisher struct {
+	kafka      events.Producer
+	notifier   notifservice.NotificationSender
+	appBaseURL string
+	verifyRepo authrepo.VerificationTokenRepository
+}
+
+func (p *registrationPublisher) publish(
+	ctx context.Context,
+	created *userdomain.User,
+	rawToken string,
+) {
+	if created == nil {
+		return // never panic in production flow
+	}
+
+	if p.notifier == nil {
+		return // fail silently or log depending on your policy
+	}
+
+	log := logger.FromContext(ctx)
+
+	verifyURL := fmt.Sprintf("%s/auth/verify-email?token=%s", p.appBaseURL, rawToken)
+
+	// ── Attempt event publish (best effort) ─────────────────────
+	err := p.kafka.Publish(ctx, events.TopicUserEvents, "user.registered", events.UserRegistered{
+		UserID:       created.ID.String(),
+		Email:        created.Email,
+		DisplayName:  created.DisplayName,
+		Provider:     "email",
+		Locale:       created.Locale,
+		Country:      created.Country,
+		RegisteredAt: time.Now(),
+	})
+
+	if err == nil {
+		// Kafka accepted event (best effort success)
+		return
+	}
+
+	log.Warn().
+		Err(err).
+		Msg("kafka publish failed — sending direct email fallback")
+
+	// ── Guaranteed email fallback ───────────────────────────────
+	_ = p.notifier.SendEmail(
+		ctx,
+		created.Email,
+		"Verify your ViewAura email",
+		"email_verification",
+		map[string]any{
+			"verify_url":   verifyURL,
+			"display_name": created.DisplayName,
+		},
+	)
 }
 
 // ─── Register ────────────────────────────────────────────────────────────────
@@ -147,42 +218,87 @@ func (s *authService) Register(ctx context.Context, cmd domain.RegisterCmd) (*us
 		Country:     cmd.Country,
 	}
 
-	created, err := s.users.Create(ctx, user)
+	var created *userdomain.User
+
+	err = s.tx.WithTx(ctx, func(ctx context.Context) error {
+
+		var err error
+
+		// 1. create user
+		created, err = s.users.Create(ctx, user)
+		if err != nil {
+			return err
+		}
+
+		// 2. auth provider (password hash lives here)
+		if err := s.authProviders.Link(ctx, &domain.LinkedAuthProvider{
+			ID:          uuid.New().String(),
+			UserID:      created.ID,
+			Provider:    domain.ProviderEmail,
+			ProviderID:  created.Email,
+			AccessToken: strPtr(string(hash)),
+		}); err != nil {
+			return err
+		}
+
+		// 3. profile seed
+		if _, err := s.profiles.Upsert(ctx, &userdomain.UserProfile{
+			UserID:     created.ID,
+			Visibility: userdomain.VisibilityPublic,
+		}); err != nil {
+			return err
+		}
+
+		// 4. preferences seed
+		if _, err := s.prefs.Upsert(ctx, &userdomain.UserPreferences{
+			UserID:             created.ID,
+			DarkMode:           false,
+			PreferredGenres:    []string{},
+			DislikedGenres:     []string{},
+			PreferredLanguages: []string{"eng"},
+		}); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// Store the password hash in user_auth_providers — never on the user row.
-	if err := s.authProviders.Link(ctx, &domain.LinkedAuthProvider{
-		ID:          uuid.New().String(),
-		UserID:      created.ID,
-		Provider:    domain.ProviderEmail,
-		ProviderID:  created.Email,
-		AccessToken: strPtr(string(hash)),
-	}); err != nil {
-		log.Error().Err(err).Msg("auth: failed to store auth provider record")
-	}
-
-	// Seed profile and preferences rows so downstream reads never 404.
-	_, _ = s.profiles.Upsert(ctx, &userdomain.UserProfile{
-		UserID:     created.ID,
-		Visibility: userdomain.VisibilityPublic,
-	})
-	_, _ = s.prefs.Upsert(ctx, &userdomain.UserPreferences{
-		UserID:   created.ID,
-		DarkMode: true,
-	})
+	// ── After commit — safe side effects ──────────────────────────────────────
 
 	pair, err := s.tokens.Issue(ctx, created)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	_ = s.pub.Publish(ctx, events.TopicUserEvents, "user.registered", events.UserRegistered{
-		UserID: created.ID.String(), Email: created.Email, RegisteredAt: time.Now(),
+	// Generate the verification token now so the fallback publisher can embed
+	// it in the email when Kafka is unavailable.  The token is also stored in
+	// the DB so VerifyEmail works regardless of which delivery path was used.
+	rawToken := generateSecureToken(32)
+	_ = s.verifyTokens.DeleteAllForUser(ctx, created.ID.String(), domain.PurposeEmailVerify)
+	_ = s.verifyTokens.Create(ctx, &domain.VerificationToken{
+		ID:        uuid.New().String(),
+		UserID:    created.ID.String(),
+		Purpose:   domain.PurposeEmailVerify,
+		TokenHash: hashToken(rawToken),
+		ExpiresAt: time.Now().Add(domain.TTL(domain.PurposeEmailVerify)),
+		CreatedAt: time.Now(),
 	})
 
+	// Publish via the fallback publisher: Kafka → direct email (in that order).
+	rp := &registrationPublisher{
+		kafka:      s.pub,
+		notifier:   s.notifier,
+		appBaseURL: s.appBaseURL,
+		verifyRepo: s.verifyTokens,
+	}
+	rp.publish(ctx, created, rawToken)
+
 	log.Info().Str("user_id", created.ID.String()).Msg("auth: user registered")
+
 	return created, pair, nil
 }
 
@@ -800,6 +916,13 @@ func validateRegister(cmd domain.RegisterCmd) error {
 	}
 	if len(strings.TrimSpace(cmd.DisplayName)) < 2 {
 		errs = append(errs, fieldErr{"display_name", "must be at least 2 characters"})
+	}
+
+	if len(strings.TrimSpace(cmd.FirstName)) < 2 {
+		errs = append(errs, fieldErr{"first_name", "must be at least 2 characters"})
+	}
+	if len(strings.TrimSpace(cmd.LastName)) < 2 {
+		errs = append(errs, fieldErr{"last_name", "must be at least 2 characters"})
 	}
 	if len(errs) > 0 {
 		return apierror.Validation("registration input is invalid", errs)

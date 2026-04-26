@@ -24,7 +24,7 @@ const (
 	StatusActive    Status = "active"
 	StatusSuspended Status = "suspended"
 	StatusDeleted   Status = "deleted"
-	StatusPending   Status = "pending_verification"
+	StatusPending   Status = "pending"
 )
 
 // Visibility controls who can see a user profile.
@@ -46,6 +46,9 @@ type User struct {
 	Email         string
 	EmailVerified bool
 	Username      string
+	FirstName     string
+	LastName      string
+	OtherNames    *string
 	DisplayName   string
 	Role          Role
 	Status        Status

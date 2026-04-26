@@ -195,10 +195,22 @@ migrate-up:
 	        -database "$(DB_DSN)" up
 	@echo "✓ migrations applied"
 
-## migrate-down: Roll back the last migration.
+## migrate-down: Roll back migrations -ll, 1, 2, etc default 1.
 migrate-down:
-	migrate -path infrastructure/postgres/migrations \
-	        -database "$(DB_DSN)" down 1
+	@if [ "$(filter -all,$(MAKECMDGOALS))" ]; then \
+		migrate -path infrastructure/postgres/migrations \
+			-database "$(DB_DSN)" down -all; \
+	elif [ -n "$(word 2,$(MAKECMDGOALS))" ]; then \
+		migrate -path infrastructure/postgres/migrations \
+			-database "$(DB_DSN)" down $(word 2,$(MAKECMDGOALS)); \
+	else \
+		migrate -path infrastructure/postgres/migrations \
+			-database "$(DB_DSN)" down 1; \
+	fi
+
+# Prevent make from treating extra args as targets
+%:
+	@:
 
 ## migrate-status: Show current migration version.
 migrate-status:

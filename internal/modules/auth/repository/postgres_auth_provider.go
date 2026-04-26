@@ -3,13 +3,16 @@ package repository
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	authdomain "github.com/Ab-dex/view-aura/internal/modules/auth/domain"
 	"github.com/Ab-dex/view-aura/internal/modules/user/domain"
+	shareddb "github.com/Ab-dex/view-aura/internal/platform/db"
 	apierror "github.com/Ab-dex/view-aura/internal/platform/error"
 )
 
@@ -22,22 +25,33 @@ func NewAuthProviderRepository(pool *pgxpool.Pool) AuthProviderRepository {
 	return &pgAuthProviderRepository{pool: pool}
 }
 
+func (r *pgAuthProviderRepository) conn(ctx context.Context) shareddb.Executor {
+	return shareddb.Conn(ctx, r.pool)
+}
+
 // Link inserts a new provider row, or updates the tokens + last_used_at if the
 // (user_id, provider, provider_id) triple already exists.
 func (r *pgAuthProviderRepository) Link(ctx context.Context, p *authdomain.LinkedAuthProvider) error {
 	const q = `
 		INSERT INTO user_auth_providers (
-			id, user_id, provider, provider_id,
+			id, user_id, provider, provider_user_id,
 			access_token, refresh_token, linked_at, last_used_at
 		) VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7)
 		ON CONFLICT (user_id, provider) DO UPDATE SET
-			provider_id   = EXCLUDED.provider_id,
+			provider_user_id   = EXCLUDED.provider_user_id,
 			access_token  = EXCLUDED.access_token,
 			refresh_token = EXCLUDED.refresh_token,
 			last_used_at  = EXCLUDED.last_used_at`
 
-	_, err := r.pool.Exec(ctx, q,
-		p.ID, p.UserID, p.Provider, p.ProviderID,
+	fmt.Print(p.UserID)
+
+	userID, err := uuid.Parse(string(p.UserID))
+	if err != nil {
+		return err
+	}
+
+	_, err = r.conn(ctx).Exec(ctx, q,
+		p.ID, userID, p.Provider, p.ProviderID,
 		p.AccessToken, p.RefreshToken, p.LastUsedAt,
 	)
 	return mapPgError(err, "link auth provider")

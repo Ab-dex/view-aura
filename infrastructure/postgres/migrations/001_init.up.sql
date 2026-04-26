@@ -163,7 +163,7 @@ CREATE TABLE user_auth_providers (
     refresh_token    TEXT,
     linked_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     last_used_at     TIMESTAMPTZ,
-    UNIQUE (provider, provider_user_id)
+    UNIQUE (user_id, provider)
 );
 
 CREATE INDEX idx_auth_providers_user     ON user_auth_providers(user_id);

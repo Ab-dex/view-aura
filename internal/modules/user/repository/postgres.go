@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/Ab-dex/view-aura/internal/modules/user/domain"
+	shareddb "github.com/Ab-dex/view-aura/internal/platform/db"
 	apierror "github.com/Ab-dex/view-aura/internal/platform/error"
 )
 
@@ -26,25 +27,32 @@ func NewUserRepository(pool *pgxpool.Pool) UserRepository {
 	return &pgUserRepository{pool: pool}
 }
 
+func (r *pgUserRepository) conn(ctx context.Context) shareddb.Executor {
+	return shareddb.Conn(ctx, r.pool)
+}
+
 func (r *pgUserRepository) Create(ctx context.Context, u *domain.User) (*domain.User, error) {
 	const q = `
 		INSERT INTO users (
 			id, email, email_verified, username, display_name,
-			role, status,
+			role_id, status,
 			locale, timezone, country,
 			created_at, updated_at
-		) VALUES (
+		)
+		SELECT
 			$1, $2, $3, $4, $5,
-			$6, $7,
+			r.id, $7,
 			$8, $9, $10,
 			NOW(), NOW()
-		)
-		RETURNING id, email, email_verified, username, display_name,
-		          role, status,
-		          locale, timezone, country,
-		          is_deleted, deleted_at, created_at, updated_at`
+		FROM roles r
+		WHERE LOWER(r.name) = LOWER($6)
+		RETURNING 
+			id, email, email_verified, username, display_name,
+			role_id, status,
+			locale, timezone, country,
+			is_deleted, deleted_at, created_at, updated_at;`
 
-	row := r.pool.QueryRow(ctx, q,
+	row := r.conn(ctx).QueryRow(ctx, q,
 		u.ID,
 		u.Email,
 		u.EmailVerified,
@@ -58,6 +66,7 @@ func (r *pgUserRepository) Create(ctx context.Context, u *domain.User) (*domain.
 	)
 
 	result, err := scanUser(row)
+
 	if err != nil {
 		return nil, mapPgError(err, "create user")
 	}
@@ -66,14 +75,28 @@ func (r *pgUserRepository) Create(ctx context.Context, u *domain.User) (*domain.
 
 func (r *pgUserRepository) GetByID(ctx context.Context, id domain.UserID) (*domain.User, error) {
 	const q = `
-		SELECT id, email, email_verified, username, display_name,
-		       role, status, auth_provider, provider_id,
-		       locale, timezone, country,
-		       is_deleted, deleted_at, created_at, updated_at
-		FROM users
-		WHERE id = $1 AND is_deleted = FALSE`
+		SELECT 
+			u.id, 
+			u.email, 
+			u.email_verified, 
+			u.username, 
+			u.display_name,
+			r.name AS role,
+			u.status,
+			u.locale, 
+			u.timezone, 
+			u.country,
+			u.is_deleted, 
+			u.deleted_at, 
+			u.created_at, 
+			u.updated_at
+		FROM users u
+		JOIN roles r ON u.role_id = r.id
+		WHERE u.id = $1 
+		AND u.is_deleted = FALSE;
+		`
 
-	row := r.pool.QueryRow(ctx, q, id)
+	row := r.conn(ctx).QueryRow(ctx, q, id)
 	u, err := scanUser(row)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -86,14 +109,28 @@ func (r *pgUserRepository) GetByID(ctx context.Context, id domain.UserID) (*doma
 
 func (r *pgUserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	const q = `
-		SELECT id, email, email_verified, username, display_name,
-		       role, status, auth_provider, provider_id,
-		       locale, timezone, country,
-		       is_deleted, deleted_at, created_at, updated_at
-		FROM users
-		WHERE LOWER(email) = LOWER($1) AND is_deleted = FALSE`
+		SELECT 
+			u.id, 
+			u.email, 
+			u.email_verified, 
+			u.username, 
+			u.display_name,
+			r.name AS role,
+			u.status,
+			u.locale, 
+			u.timezone, 
+			u.country,
+			u.is_deleted, 
+			u.deleted_at, 
+			u.created_at, 
+			u.updated_at
+		FROM users u
+		JOIN roles r ON u.role_id = r.id
+		WHERE LOWER(u.email) = LOWER($1) 
+		AND u.is_deleted = FALSE
+		`
 
-	row := r.pool.QueryRow(ctx, q, email)
+	row := r.conn(ctx).QueryRow(ctx, q, email)
 	u, err := scanUser(row)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -106,14 +143,26 @@ func (r *pgUserRepository) GetByEmail(ctx context.Context, email string) (*domai
 
 func (r *pgUserRepository) GetByUsername(ctx context.Context, username string) (*domain.User, error) {
 	const q = `
-		SELECT id, email, email_verified, username, display_name,
-		       role, status, auth_provider, provider_id,
-		       locale, timezone, country,
-		       is_deleted, deleted_at, created_at, updated_at
-		FROM users
-		WHERE username = $1 AND is_deleted = FALSE`
+		SELECT 
+			u.id, 
+			u.email, 
+			u.email_verified, 
+			u.username, 
+			u.display_name,
+			r.name AS role,
+			u.status,
+			u.locale, 
+			u.timezone, 
+			u.country,
+			u.is_deleted, 
+			u.deleted_at, 
+			u.created_at, 
+			u.updated_at
+		FROM users u
+		JOIN roles r ON u.role_id = r.id
+		WHERE LOWER(u.username) = LOWER($1) AND is_deleted = FALSE`
 
-	row := r.pool.QueryRow(ctx, q, username)
+	row := r.conn(ctx).QueryRow(ctx, q, username)
 	u, err := scanUser(row)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -127,7 +176,7 @@ func (r *pgUserRepository) GetByUsername(ctx context.Context, username string) (
 func (r *pgUserRepository) ExistsByEmail(ctx context.Context, email string) (bool, error) {
 	const q = `SELECT EXISTS(SELECT 1 FROM users WHERE LOWER(email) = LOWER($1))`
 	var exists bool
-	if err := r.pool.QueryRow(ctx, q, email).Scan(&exists); err != nil {
+	if err := r.conn(ctx).QueryRow(ctx, q, email).Scan(&exists); err != nil {
 		return false, mapPgError(err, "exists by email")
 	}
 	return exists, nil
@@ -136,7 +185,7 @@ func (r *pgUserRepository) ExistsByEmail(ctx context.Context, email string) (boo
 func (r *pgUserRepository) ExistsByUsername(ctx context.Context, username string) (bool, error) {
 	const q = `SELECT EXISTS(SELECT 1 FROM users WHERE username = $1)`
 	var exists bool
-	if err := r.pool.QueryRow(ctx, q, username).Scan(&exists); err != nil {
+	if err := r.conn(ctx).QueryRow(ctx, q, username).Scan(&exists); err != nil {
 		return false, mapPgError(err, "exists by username")
 	}
 	return exists, nil
@@ -161,7 +210,7 @@ func (r *pgUserRepository) Update(ctx context.Context, u *domain.User) (*domain.
 		          locale, timezone, country,
 		          is_deleted, deleted_at, created_at, updated_at`
 
-	row := r.pool.QueryRow(ctx, q,
+	row := r.conn(ctx).QueryRow(ctx, q,
 		u.ID, u.Email, u.EmailVerified, u.Username, u.DisplayName,
 		u.Role, u.Status, u.Locale, u.Timezone, u.Country,
 	)
@@ -181,7 +230,7 @@ func (r *pgUserRepository) SoftDelete(ctx context.Context, id domain.UserID) err
 		SET is_deleted = TRUE, deleted_at = NOW(), status = 'deleted', updated_at = NOW()
 		WHERE id = $1 AND is_deleted = FALSE`
 
-	ct, err := r.pool.Exec(ctx, q, id)
+	ct, err := r.conn(ctx).Exec(ctx, q, id)
 	if err != nil {
 		return mapPgError(err, "soft delete user")
 	}
@@ -202,6 +251,10 @@ func NewProfileRepository(pool *pgxpool.Pool) ProfileRepository {
 	return &pgProfileRepository{pool: pool}
 }
 
+func (r *pgProfileRepository) conn(ctx context.Context) shareddb.Executor {
+	return shareddb.Conn(ctx, r.pool)
+}
+
 func (r *pgProfileRepository) Upsert(ctx context.Context, p *domain.UserProfile) (*domain.UserProfile, error) {
 	const q = `
 		INSERT INTO user_profiles (user_id, avatar_url, banner_url, bio, website, birthdate, gender, visibility, updated_at)
@@ -217,7 +270,7 @@ func (r *pgProfileRepository) Upsert(ctx context.Context, p *domain.UserProfile)
 			updated_at = NOW()
 		RETURNING user_id, avatar_url, banner_url, bio, website, birthdate, gender, visibility, updated_at`
 
-	row := r.pool.QueryRow(ctx, q,
+	row := r.conn(ctx).QueryRow(ctx, q,
 		p.UserID, p.AvatarURL, p.BannerURL, p.Bio, p.Website,
 		p.Birthdate, p.Gender, p.Visibility,
 	)
@@ -229,7 +282,7 @@ func (r *pgProfileRepository) GetByUserID(ctx context.Context, userID domain.Use
 		SELECT user_id, avatar_url, banner_url, bio, website, birthdate, gender, visibility, updated_at
 		FROM user_profiles WHERE user_id = $1`
 
-	row := r.pool.QueryRow(ctx, q, userID)
+	row := r.conn(ctx).QueryRow(ctx, q, userID)
 	profile, err := scanProfile(row)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -251,6 +304,10 @@ func NewPreferencesRepository(pool *pgxpool.Pool) PreferencesRepository {
 	return &pgPreferencesRepository{pool: pool}
 }
 
+func (r *pgPreferencesRepository) conn(ctx context.Context) shareddb.Executor {
+	return shareddb.Conn(ctx, r.pool)
+}
+
 func (r *pgPreferencesRepository) Upsert(ctx context.Context, p *domain.UserPreferences) (*domain.UserPreferences, error) {
 	const q = `
 		INSERT INTO user_preferences (
@@ -268,7 +325,7 @@ func (r *pgPreferencesRepository) Upsert(ctx context.Context, p *domain.UserPref
 		RETURNING user_id, preferred_genres, disliked_genres, preferred_languages,
 		          adult_content, dark_mode, autoplay_trailers, updated_at`
 
-	row := r.pool.QueryRow(ctx, q,
+	row := r.conn(ctx).QueryRow(ctx, q,
 		p.UserID, p.PreferredGenres, p.DislikedGenres, p.PreferredLanguages,
 		p.AdultContent, p.DarkMode, p.AutoplayTrailers,
 	)
@@ -281,7 +338,7 @@ func (r *pgPreferencesRepository) GetByUserID(ctx context.Context, userID domain
 		       adult_content, dark_mode, autoplay_trailers, updated_at
 		FROM user_preferences WHERE user_id = $1`
 
-	row := r.pool.QueryRow(ctx, q, userID)
+	row := r.conn(ctx).QueryRow(ctx, q, userID)
 	prefs, err := scanPreferences(row)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

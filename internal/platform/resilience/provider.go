@@ -21,6 +21,7 @@ func ProvideResilientProducer(
 	rdb *cache.Client,
 	cfg *config.Config,
 ) *ResilientProducer {
+
 	logDir := cfg.Resilience.LogDir
 	if rdb != nil {
 		return NewResilientProducer(primary, rdb.Client, logDir)

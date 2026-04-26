@@ -2,6 +2,8 @@ package app
 
 import (
 	"github.com/google/wire"
+
+	shareddb "github.com/Ab-dex/view-aura/internal/platform/db"
 )
 
 var ProviderSet = wire.NewSet(
@@ -15,4 +17,5 @@ var ProviderSet = wire.NewSet(
 	// ProvideHTTPHandler,
 	// ProvideHTTPServer,
 	New,
+	shareddb.NewTxManager,
 )

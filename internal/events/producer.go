@@ -44,7 +44,8 @@ type kafkaProducer struct {
 
 // NewProducer creates a confluent-kafka-go producer from config.
 func NewProducer(cfg config.KafkaConfig) (Producer, error) {
-	fmt.Printf("Creating Kafka producer with brokers: %s\n", cfg.SecurityProtocol)
+	fmt.Printf("Creating Kafka producer with brokers: %s\n", cfg.Brokers)
+
 	cm := kafka.ConfigMap{
 		"bootstrap.servers":  cfg.Brokers,
 		"acks":               "all",
@@ -56,29 +57,26 @@ func NewProducer(cfg config.KafkaConfig) (Producer, error) {
 		"message.max.bytes":  1048576,
 	}
 
-	p, err := kafka.NewProducer(&cm)
-
-	// Only set security config if explicitly provided
 	if cfg.SecurityProtocol != "" {
 		cm["security.protocol"] = cfg.SecurityProtocol
 	}
 
-	// Only enable SASL if ALL required fields exist
 	if cfg.SASLMechanism != "" &&
 		cfg.SASLUsername != "" &&
 		cfg.SASLPassword != "" {
 
-		cm["security.protocol"] = cfg.SecurityProtocol // must be SASL_* here
+		cm["security.protocol"] = cfg.SecurityProtocol
 		cm["sasl.mechanisms"] = cfg.SASLMechanism
 		cm["sasl.username"] = cfg.SASLUsername
 		cm["sasl.password"] = cfg.SASLPassword
 	}
 
+	p, err := kafka.NewProducer(&cm)
 	if err != nil {
 		return nil, fmt.Errorf("kafka: new producer: %w", err)
 	}
 
-	// Start delivery-report goroutine — logs permanent failures.
+	// Start delivery-report goroutine
 	go func() {
 		for e := range p.Events() {
 			switch ev := e.(type) {
@@ -101,6 +99,11 @@ func NewProducer(cfg config.KafkaConfig) (Producer, error) {
 }
 
 func (kp *kafkaProducer) Publish(ctx context.Context, topic, eventType string, payload any) error {
+
+	if kp == nil || kp.p == nil {
+		return fmt.Errorf("kafka producer is not initialized")
+	}
+
 	raw, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("events: marshal payload for %s: %w", eventType, err)
@@ -113,13 +116,12 @@ func (kp *kafkaProducer) Publish(ctx context.Context, topic, eventType string, p
 		PublishedAt: time.Now().UTC(),
 		Payload:     raw,
 	}
+
 	envBytes, err := json.Marshal(env)
 	if err != nil {
 		return fmt.Errorf("events: marshal envelope for %s: %w", eventType, err)
 	}
 
-	// Use the eventType as the message key so events for the same logical
-	// entity land on the same partition (order preserved per entity).
 	return kp.p.Produce(&kafka.Message{
 		TopicPartition: kafka.TopicPartition{
 			Topic:     &topic,
@@ -127,7 +129,7 @@ func (kp *kafkaProducer) Publish(ctx context.Context, topic, eventType string, p
 		},
 		Key:   []byte(eventType),
 		Value: envBytes,
-	}, nil) // nil = async delivery report via Events() channel
+	}, nil)
 }
 
 func (kp *kafkaProducer) Close() {
