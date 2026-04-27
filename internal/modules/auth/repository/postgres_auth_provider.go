@@ -75,13 +75,14 @@ func (r *pgAuthProviderRepository) Unlink(ctx context.Context, userID domain.Use
 // (where provider = "email" and providerID = the user's email address).
 func (r *pgAuthProviderRepository) GetByProvider(ctx context.Context, provider authdomain.AuthProvider, providerID string) (*authdomain.LinkedAuthProvider, error) {
 	const q = `
-		SELECT id, user_id, provider, provider_id,
+		SELECT id, user_id, provider, provider_user_id,
 		       access_token, refresh_token, linked_at, last_used_at
 		FROM user_auth_providers
-		WHERE provider = $1 AND provider_id = $2`
+		WHERE provider = $1 AND provider_user_id = $2`
 
 	row := r.pool.QueryRow(ctx, q, provider, providerID)
 	p, err := scanAuthProvider(row)
+
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, apierror.ErrUserNotFound

@@ -70,14 +70,16 @@ all: dev
 ## swagger: Regenerate OpenAPI docs from swag annotations.
 ##          Output: docs/docs.go  docs/swagger.json  docs/swagger.yaml
 swagger:
-	@echo "→ generating swagger docs..."
-	swag init $(SWAG_FLAGS)
-	@echo "✓ docs written to $(DOCS_DIR)/"
+	swag init --generalInfo cmd/api/main.go --dir internal/modules/auth/api/http,internal/modules/movie/api/http,internal/modules/rating/api/http,internal/modules/review/api/http,internal/modules/watchlist/api/http,internal/modules/social/api/http,internal/modules/notification/api/http,internal/modules/payment/api/http,internal/modules/upload/api/http,internal/modules/quota/api/http,internal/modules/moderation/api/http,internal/modules/user/api,internal/modules/profile/api/http --output internal/docs --outputTypes go,json,yaml --parseDependency --parseInternal --parseDepth 5
 
 ## swagger-serve: Run the API in local mode and open the Swagger UI.
 swagger-serve: swagger build
 	@echo "→ starting server (Swagger UI at http://localhost:8080/swagger/index.html)"
 	APP_ENV=local $(BINARY)
+
+## Alias
+.PHONY: docs
+docs: swagger
 
 ## wire: Regenerate Wire dependency injection graph for cmd/api.
 wire:

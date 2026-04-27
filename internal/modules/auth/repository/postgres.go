@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -381,7 +382,7 @@ func (r *pgSecurityRepository) Upsert(ctx context.Context, sec *domain.UserSecur
 
 func (r *pgSecurityRepository) GetByUserID(ctx context.Context, userID userdomain.UserID) (*domain.UserSecurity, error) {
 	const q = `
-		SELECT user_id, failed_login_count, last_failed_login, locked_until,
+		SELECT user_id, failed_login_count, last_failed_at as last_failed_login, locked_until,
 		       risk_score, two_factor_enabled, last_login_at, last_login_ip, updated_at
 		FROM user_security WHERE user_id = $1`
 
@@ -434,6 +435,7 @@ func (r *pgSecurityRepository) LockUntil(ctx context.Context, userID userdomain.
 }
 
 func (r *pgSecurityRepository) RecordLogin(ctx context.Context, userID userdomain.UserID, ip string) error {
+
 	const q = `
 		INSERT INTO user_security (user_id, last_login_at, last_login_ip, updated_at)
 		VALUES ($1, NOW(), $2, NOW())
@@ -445,12 +447,18 @@ func (r *pgSecurityRepository) RecordLogin(ctx context.Context, userID userdomai
 
 func scanSecurity(row rowScanner) (*domain.UserSecurity, error) {
 	var s domain.UserSecurity
+	var lastLoginIP net.IP
 	err := row.Scan(
 		&s.UserID, &s.FailedLoginCount, &s.LastFailedLogin, &s.LockedUntil,
-		&s.RiskScore, &s.TwoFactorEnabled, &s.LastLoginAt, &s.LastLoginIP, &s.UpdatedAt,
+		&s.RiskScore, &s.TwoFactorEnabled, &s.LastLoginAt, &lastLoginIP, &s.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
+	}
+
+	if lastLoginIP != nil {
+		ipStr := lastLoginIP.String()
+		s.LastLoginIP = ipStr
 	}
 	return &s, nil
 }

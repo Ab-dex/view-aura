@@ -333,6 +333,7 @@ func (s *authService) Login(ctx context.Context, cmd domain.LoginCmd) (*userdoma
 	}
 
 	ap, err := s.authProviders.GetByProvider(ctx, domain.ProviderEmail, user.Email)
+
 	if err != nil || ap.AccessToken == nil {
 		return nil, nil, apierror.ErrInvalidCredentials
 	}
@@ -822,6 +823,9 @@ func (s *authService) issueSessionTokens(ctx context.Context, user *userdomain.U
 	if err != nil {
 		return nil, nil, err
 	}
+
+	// You have to fix this to work whether or not redis is available
+
 	claims, err := s.tokens.ValidateRefresh(ctx, pair.RefreshToken)
 	if err != nil {
 		return nil, nil, err
@@ -838,6 +842,7 @@ func (s *authService) issueSessionTokens(ctx context.Context, user *userdomain.U
 	}); err != nil {
 		return nil, nil, err
 	}
+
 	_ = s.pub.Publish(ctx, events.TopicUserEvents, "user.logged_in", events.UserLoggedIn{
 		UserID: user.ID.String(), DeviceID: deviceID, IPAddress: ip,
 		UserAgent: ua, LoggedInAt: time.Now(),

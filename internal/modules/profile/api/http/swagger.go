@@ -115,3 +115,43 @@ func (h *ProfileHandler) swaggerSwitch() {}
 //	@Failure     404 {object} errorResponse
 //	@Router      /users/me/profiles/{id}/default [put]
 func (h *ProfileHandler) swaggerSetDefault() {}
+
+type householdProfileResponse struct {
+	ID        string `json:"id"`
+	UserID    string `json:"user_id"`
+	Name      string `json:"name"`
+	AvatarURL string `json:"avatar_url"`
+	Type      string `json:"type"`
+	IsDefault bool   `json:"is_default"`
+	SortOrder int    `json:"sort_order"`
+	CreatedAt string `json:"created_at"`
+}
+
+type createHouseholdProfileRequest struct {
+	Name      string `json:"name"`
+	AvatarURL string `json:"avatar_url"`
+	Type      string `json:"type"`
+	PIN       string `json:"pin"`
+	MaxRating string `json:"max_rating"`
+}
+
+type updateHouseholdProfileRequest struct {
+	Name      *string `json:"name"`
+	AvatarURL *string `json:"avatar_url"`
+	PIN       *string `json:"pin"`
+	MaxRating *string `json:"max_rating"`
+	IsDefault *bool   `json:"is_default"`
+	SortOrder *int    `json:"sort_order"`
+}
+
+type switchHouseholdProfileRequest struct {
+	PIN string `json:"pin"`
+}
+
+type errorResponse struct {
+	Error struct {
+		Code    string      `json:"code"`
+		Message string      `json:"message"`
+		Details interface{} `json:"details,omitempty"`
+	} `json:"error"`
+}

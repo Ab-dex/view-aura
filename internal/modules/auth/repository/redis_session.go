@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"reflect"
 	"time"
 
 	goredis "github.com/redis/go-redis/v9"
@@ -22,6 +23,9 @@ type sessionCache struct {
 
 // NewSessionRepository constructs the Redis-backed SessionRepository.
 func NewSessionRepository(client *sharedredis.Client) SessionRepository {
+	if isNil(client) {
+		return NewNoopSessionRepository()
+	}
 	return &sessionCache{client: client}
 }
 
@@ -209,3 +213,18 @@ func fromSessionData(d sessionData) *domain.UserSession {
 
 // Compile-time assertion: sessionCache satisfies SessionRepository.
 var _ SessionRepository = (*sessionCache)(nil)
+
+func isNil(i any) bool {
+	if i == nil {
+		return true
+	}
+
+	v := reflect.ValueOf(i)
+
+	switch v.Kind() {
+	case reflect.Ptr, reflect.Interface, reflect.Map, reflect.Slice, reflect.Func:
+		return v.IsNil()
+	default:
+		return false
+	}
+}

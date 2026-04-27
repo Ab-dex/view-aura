@@ -37,7 +37,7 @@
 //	@license.name MIT
 //	@license.url  https://opensource.org/licenses/MIT
 //
-//	@host     localhost:8080
+//	@host     localhost:8081
 //	@BasePath /api/v1
 //
 //	@schemes http https
@@ -88,6 +88,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	_ "github.com/Ab-dex/view-aura/cmd/api/docs"
 	"github.com/Ab-dex/view-aura/internal/platform/config"
 	"github.com/rs/zerolog/log"
 )

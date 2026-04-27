@@ -181,3 +181,16 @@ func buildChain(
 	h = middleware.RequestID(h)
 	return h
 }
+
+// func NewLimiter(cfg config.Config, rdb *cache.Client) ratelimit.Limiter {
+// 	if rdb != nil {
+// 		l, err := ratelimit.New(cfg.Redis.Addr, cfg.Redis.Password)
+// 		if err == nil {
+// 			return &ratelimit.Limiter{client: l}
+// 		}
+
+// 		log.Warn().Err(err).Msg("rate limiter: redis init failed — falling back to memory")
+// 	}
+
+// 	return ratelimit.NewMemoryLimiter()
+// }

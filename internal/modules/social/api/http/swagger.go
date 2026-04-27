@@ -230,3 +230,11 @@ type leaderboardResponse struct {
 	Limit       int                   `json:"limit"`
 	Offset      int                   `json:"offset"`
 }
+
+type errorResponse struct {
+	Error struct {
+		Code    string      `json:"code"`
+		Message string      `json:"message"`
+		Details interface{} `json:"details,omitempty"`
+	} `json:"error"`
+}

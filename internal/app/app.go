@@ -68,6 +68,7 @@ func NewRouter(
 	recover contract.RecoveryMiddleware,
 ) *gin.Engine {
 	r := gin.New()
+	r.RedirectTrailingSlash = false
 	r.Use(gin.HandlerFunc(recover))
 	r.Use(gin.HandlerFunc(reqID))
 	r.Use(gin.HandlerFunc(log))
@@ -98,12 +99,28 @@ func NewRouter(
 	})
 
 	if cfg.App.Env != "production" {
-		r.GET("/swagger/*any", ginSwagger.WrapHandler(
-			swaggerFiles.Handler,
-			ginSwagger.URL("/swagger/doc.json"),
-			ginSwagger.DefaultModelsExpandDepth(-1),
-		))
+		url := ginSwagger.URL("/swagger/doc.json")
+		handler := ginSwagger.WrapHandler(swaggerFiles.Handler, url, ginSwagger.DefaultModelsExpandDepth(-1))
+
+		// /swagger and /swagger/ both redirect to the canonical index URL.
+		// ginSwagger resolves files by stripping the /swagger prefix from
+		// c.Request.URL.Path — so /swagger/ → "/" which it cannot serve.
+		// Redirecting to /swagger/index.html gives it a concrete file path.
+		r.GET("/swagger", func(c *gin.Context) {
+			c.Redirect(http.StatusMovedPermanently, "/swagger/index.html")
+		})
+		r.GET("/swagger/*any", func(c *gin.Context) {
+			// Rewrite the bare trailing slash before ginSwagger sees it.
+			if c.Request.URL.Path == "/swagger/" {
+				c.Request.URL.Path = "/swagger/index.html"
+			}
+			handler(c)
+		})
 	}
+
+	// r.NoRoute(func(c *gin.Context) {
+	// 	c.File("index.html")
+	// })
 
 	return r
 }

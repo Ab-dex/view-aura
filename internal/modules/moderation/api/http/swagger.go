@@ -164,3 +164,11 @@ type moderationCaseListResponse struct {
 type appealWrapperResponse struct {
 	Appeal *appealResponse `json:"appeal"`
 }
+
+type errorResponse struct {
+	Error struct {
+		Code    string      `json:"code"`
+		Message string      `json:"message"`
+		Details interface{} `json:"details,omitempty"`
+	} `json:"error"`
+}

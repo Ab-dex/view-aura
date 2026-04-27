@@ -196,3 +196,41 @@ type errorResponse struct {
 		Details interface{} `json:"details,omitempty"`
 	} `json:"error"`
 }
+
+type registerRequest struct {
+	Email       string `json:"email"`
+	Password    string `json:"password"`
+	DisplayName string `json:"display_name"`
+	FirstName   string `json:"first_name"`
+	LastName    string `json:"last_name"`
+	Locale      string `json:"locale"`
+	Country     string `json:"country"`
+}
+
+type loginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type refreshRequest struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
+type tokenResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	ExpiresIn    int64  `json:"expires_in"`
+}
+
+type authResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	ExpiresIn    int64  `json:"expires_in"`
+	User         struct {
+		ID            string `json:"id"`
+		Email         string `json:"email"`
+		DisplayName   string `json:"display_name"`
+		Role          string `json:"role"`
+		EmailVerified bool   `json:"email_verified"`
+	} `json:"user"`
+}
