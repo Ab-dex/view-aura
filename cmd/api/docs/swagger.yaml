@@ -4146,22 +4146,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_modules_social_api_http.createChallengeRequest'
+          $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.createChallengeRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_modules_social_api_http.challengeResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.challengeResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_modules_social_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_modules_social_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Create challenge
@@ -4182,11 +4182,11 @@ paths:
         "400":
           description: Deadline passed
           schema:
-            $ref: '#/definitions/internal_modules_social_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_modules_social_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Join a challenge
@@ -4217,7 +4217,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_modules_social_api_http.leaderboardResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.leaderboardResponse'
       summary: Challenge leaderboard
       tags:
       - Social
@@ -4241,11 +4241,11 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_modules_social_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse'
         "404":
           description: Not a participant
           schema:
-            $ref: '#/definitions/internal_modules_social_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Mark movie watched in challenge
@@ -4298,11 +4298,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.assetListResponse'
+            $ref: '#/definitions/internal_modules_upload_api_http.assetListResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_upload_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: List my assets
@@ -4323,11 +4323,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.assetResponse'
+            $ref: '#/definitions/internal_modules_upload_api_http.assetResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_upload_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Get asset
@@ -4353,11 +4353,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_modules_social_api_http.feedResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.feedResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_modules_social_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Get activity feed
@@ -4572,11 +4572,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.moderationCaseListResponse'
+            $ref: '#/definitions/internal_modules_moderation_api_http.moderationCaseListResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_moderation_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: List my moderation cases
@@ -4598,26 +4598,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.appealRequest'
+          $ref: '#/definitions/internal_modules_moderation_api_http.appealRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.appealResponse'
+            $ref: '#/definitions/internal_modules_moderation_api_http.appealResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_moderation_api_http.errorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_moderation_api_http.errorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_moderation_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Submit appeal
@@ -4632,11 +4632,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.preferenceListResponse'
+            $ref: '#/definitions/internal_modules_notification_api_http.preferenceListResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_notification_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Get notification preferences
@@ -4652,18 +4652,18 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.bulkPreferenceRequest'
+          $ref: '#/definitions/internal_modules_notification_api_http.bulkPreferenceRequest'
       responses:
         "204":
           description: Preferences updated
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_notification_api_http.errorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_notification_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Bulk update preferences
@@ -4694,11 +4694,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.notificationListResponse'
+            $ref: '#/definitions/internal_modules_notification_api_http.notificationListResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_notification_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: List notifications
@@ -4719,11 +4719,11 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_notification_api_http.errorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_notification_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Mark notification read
@@ -4738,7 +4738,7 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_notification_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Mark all read
@@ -4759,7 +4759,7 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_notification_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Unread badge count
@@ -4817,7 +4817,7 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_notification_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Unregister push token
@@ -4833,18 +4833,18 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.pushTokenRequest'
+          $ref: '#/definitions/internal_modules_notification_api_http.pushTokenRequest'
       responses:
         "204":
           description: Token registered
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_notification_api_http.errorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_notification_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Register push token
@@ -5139,11 +5139,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.caseResponse'
+            $ref: '#/definitions/internal_modules_moderation_api_http.caseResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_moderation_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Get moderation case
@@ -5164,11 +5164,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.appealWrapperResponse'
+            $ref: '#/definitions/internal_modules_moderation_api_http.appealWrapperResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_moderation_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Get appeal
@@ -5190,26 +5190,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.decideAppealRequest'
+          $ref: '#/definitions/internal_modules_moderation_api_http.decideAppealRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.appealResponse'
+            $ref: '#/definitions/internal_modules_moderation_api_http.appealResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_moderation_api_http.errorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_moderation_api_http.errorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_moderation_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Decide appeal
@@ -5230,22 +5230,22 @@ paths:
         in: body
         name: body
         schema:
-          $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.decideRequest'
+          $ref: '#/definitions/internal_modules_moderation_api_http.decideRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.caseResponse'
+            $ref: '#/definitions/internal_modules_moderation_api_http.caseResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_moderation_api_http.errorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_moderation_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Approve content
@@ -5266,7 +5266,7 @@ paths:
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_moderation_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Release moderation lock
@@ -5286,11 +5286,11 @@ paths:
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_moderation_api_http.errorResponse'
         "409":
           description: Already locked
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_moderation_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Acquire moderation lock
@@ -5311,22 +5311,22 @@ paths:
         in: body
         name: body
         schema:
-          $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.decideRequest'
+          $ref: '#/definitions/internal_modules_moderation_api_http.decideRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.caseResponse'
+            $ref: '#/definitions/internal_modules_moderation_api_http.caseResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_moderation_api_http.errorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_moderation_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Reject content
@@ -5360,11 +5360,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.moderationCaseListResponse'
+            $ref: '#/definitions/internal_modules_moderation_api_http.moderationCaseListResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_moderation_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: List moderation queue
@@ -5427,11 +5427,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.movieListResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.movieListResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.errorResponse'
       summary: List / search movies
       tags:
       - Movies
@@ -5446,30 +5446,30 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.createMovieRequest'
+          $ref: '#/definitions/internal_modules_movie_api_http.createMovieRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.movieResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.movieResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.errorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.errorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.errorResponse'
         "409":
           description: Duplicate IMDb ID
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Create movie
@@ -5490,11 +5490,11 @@ paths:
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.errorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Archive movie
@@ -5514,11 +5514,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.movieDetailResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.movieDetailResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.errorResponse'
       summary: Get movie detail
       tags:
       - Movies
@@ -5537,26 +5537,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.updateMovieRequest'
+          $ref: '#/definitions/internal_modules_movie_api_http.updateMovieRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.movieResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.movieResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.errorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.errorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Update movie
@@ -5577,11 +5577,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.creditListResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.creditListResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.errorResponse'
       summary: List credits
       tags:
       - Movies
@@ -5601,26 +5601,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.addCreditRequest'
+          $ref: '#/definitions/internal_modules_movie_api_http.addCreditRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.creditResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.creditResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.errorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.errorResponse'
         "404":
           description: Movie or person not found
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Add credit
@@ -5646,11 +5646,11 @@ paths:
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.errorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Remove credit
@@ -5675,11 +5675,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.streamingLinkListResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.streamingLinkListResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.errorResponse'
       summary: List streaming links
       tags:
       - Movies
@@ -5698,22 +5698,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.upsertStreamingLinkRequest'
+          $ref: '#/definitions/internal_modules_movie_api_http.upsertStreamingLinkRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.streamingLinkResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.streamingLinkResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.errorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Upsert streaming link
@@ -5916,7 +5916,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.reviewListResponse'
+            $ref: '#/definitions/internal_modules_review_api_http.reviewListResponse'
       summary: List reviews for a movie
       tags:
       - Reviews
@@ -5935,26 +5935,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.createReviewRequest'
+          $ref: '#/definitions/internal_modules_review_api_http.createReviewRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.reviewResponse'
+            $ref: '#/definitions/internal_modules_review_api_http.reviewResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_review_api_http.errorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_review_api_http.errorResponse'
         "409":
           description: User already reviewed this movie
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_review_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Create review
@@ -5990,7 +5990,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_modules_social_api_http.threadListResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.threadListResponse'
       summary: List discussion threads for a movie
       tags:
       - Social
@@ -6009,22 +6009,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_modules_social_api_http.createThreadRequest'
+          $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.createThreadRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_modules_social_api_http.threadResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.threadResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_modules_social_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_modules_social_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Create discussion thread
@@ -6039,7 +6039,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.genreListResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.genreListResponse'
       summary: List genres
       tags:
       - Genres
@@ -6058,11 +6058,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.personResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.personResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.errorResponse'
       summary: Get person
       tags:
       - People
@@ -6081,11 +6081,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.filmographyResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.filmographyResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.errorResponse'
       summary: Get filmography
       tags:
       - People
@@ -6104,11 +6104,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.peopleListResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.peopleListResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_movie_api_http.errorResponse'
       summary: Search people
       tags:
       - People
@@ -6127,7 +6127,7 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_modules_social_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Like a post
@@ -6148,11 +6148,11 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_review_api_http.errorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_review_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Delete review
@@ -6172,11 +6172,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.reviewResponse'
+            $ref: '#/definitions/internal_modules_review_api_http.reviewResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_review_api_http.errorResponse'
       summary: Get review
       tags:
       - Reviews
@@ -6195,26 +6195,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.updateReviewRequest'
+          $ref: '#/definitions/internal_modules_review_api_http.updateReviewRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.reviewResponse'
+            $ref: '#/definitions/internal_modules_review_api_http.reviewResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_review_api_http.errorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_review_api_http.errorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_review_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Update review
@@ -6235,7 +6235,7 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_review_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Remove reaction
@@ -6256,18 +6256,18 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.reactRequest'
+          $ref: '#/definitions/internal_modules_review_api_http.reactRequest'
       responses:
         "204":
           description: Reaction recorded
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_review_api_http.errorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_review_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: React to a review
@@ -6289,22 +6289,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.reportRequest'
+          $ref: '#/definitions/internal_modules_review_api_http.reportRequest'
       responses:
         "204":
           description: Report submitted
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_review_api_http.errorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_review_api_http.errorResponse'
         "409":
           description: Already reported
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_review_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Report a review
@@ -6335,11 +6335,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_modules_social_api_http.postListResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.postListResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/internal_modules_social_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse'
       summary: List posts in a thread
       tags:
       - Social
@@ -6358,22 +6358,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_modules_social_api_http.createPostRequest'
+          $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.createPostRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_modules_social_api_http.postResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.postResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_modules_social_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_modules_social_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Post to thread
@@ -6394,18 +6394,18 @@ paths:
         in: body
         name: body
         schema:
-          $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.abortRequest'
+          $ref: '#/definitions/internal_modules_upload_api_http.abortRequest'
       responses:
         "204":
           description: Aborted
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_upload_api_http.errorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_upload_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Abort upload
@@ -6425,11 +6425,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.progressResponse'
+            $ref: '#/definitions/internal_modules_upload_api_http.progressResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_upload_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Get upload progress
@@ -6450,15 +6450,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.completeResponse'
+            $ref: '#/definitions/internal_modules_upload_api_http.completeResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_upload_api_http.errorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_upload_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Complete upload
@@ -6476,22 +6476,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.initiateRequest'
+          $ref: '#/definitions/internal_modules_upload_api_http.initiateRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.initiateResponse'
+            $ref: '#/definitions/internal_modules_upload_api_http.initiateResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_upload_api_http.errorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.errorResponse'
+            $ref: '#/definitions/internal_modules_upload_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Initiate upload
@@ -6522,7 +6522,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_modules_social_api_http.feedResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.feedResponse'
       summary: Get user activity
       tags:
       - Social
@@ -6541,7 +6541,7 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_modules_social_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Unfollow a user
@@ -6561,11 +6561,11 @@ paths:
         "400":
           description: Cannot follow yourself
           schema:
-            $ref: '#/definitions/internal_modules_social_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_modules_social_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Follow a user
@@ -6631,22 +6631,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_modules_user_api.loginRequest'
+          $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.loginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_modules_user_api.authResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.authResponse'
         "401":
           description: Invalid credentials
           schema:
-            $ref: '#/definitions/internal_modules_user_api.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse'
         "403":
           description: Account locked or suspended
           schema:
-            $ref: '#/definitions/internal_modules_user_api.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse'
       summary: Login
       tags:
       - Auth
@@ -6659,7 +6659,7 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_modules_user_api.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse'
       security:
       - BearerAuth: []
       summary: Logout
@@ -6674,7 +6674,7 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_modules_user_api.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse'
       security:
       - BearerAuth: []
       summary: Logout all devices
@@ -6689,7 +6689,7 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_modules_user_api.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse'
       security:
       - BearerAuth: []
       summary: Delete account
@@ -6703,11 +6703,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_modules_user_api.userResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.userResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_modules_user_api.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse'
       security:
       - BearerAuth: []
       summary: Get current user
@@ -6723,11 +6723,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_modules_user_api.profileResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.profileResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_modules_user_api.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse'
       security:
       - BearerAuth: []
       summary: Get Account Details
@@ -6743,22 +6743,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_modules_user_api.updateProfileRequest'
+          $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.updateProfileRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_modules_user_api.profileResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.profileResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_modules_user_api.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_modules_user_api.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse'
       security:
       - BearerAuth: []
       summary: Update account details
@@ -6775,11 +6775,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_modules_user_api.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse'
         "401":
           description: Wrong old password
           schema:
-            $ref: '#/definitions/internal_modules_user_api.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse'
       security:
       - BearerAuth: []
       summary: Change password
@@ -6794,11 +6794,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_modules_user_api.preferencesResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.preferencesResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_modules_user_api.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse'
       security:
       - BearerAuth: []
       summary: Get preferences
@@ -6814,22 +6814,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_modules_user_api.updatePreferencesRequest'
+          $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.updatePreferencesRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_modules_user_api.preferencesResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.preferencesResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_modules_user_api.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_modules_user_api.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse'
       security:
       - BearerAuth: []
       summary: Update preferences
@@ -6846,13 +6846,13 @@ paths:
           schema:
             additionalProperties:
               items:
-                $ref: '#/definitions/internal_modules_profile_api_http.householdProfileResponse'
+                $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.householdProfileResponse'
               type: array
             type: object
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_modules_profile_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: List household profiles
@@ -6868,26 +6868,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_modules_profile_api_http.createHouseholdProfileRequest'
+          $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.createHouseholdProfileRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_modules_profile_api_http.householdProfileResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.householdProfileResponse'
         "400":
           description: Validation error
           schema:
-            $ref: '#/definitions/internal_modules_profile_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_modules_profile_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse'
         "409":
           description: Profile limit reached
           schema:
-            $ref: '#/definitions/internal_modules_profile_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Create a household profile
@@ -6908,19 +6908,19 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_modules_profile_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_modules_profile_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/internal_modules_profile_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse'
         "409":
           description: Last profile or default profile
           schema:
-            $ref: '#/definitions/internal_modules_profile_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Delete a household profile
@@ -6940,19 +6940,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_modules_profile_api_http.householdProfileResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.householdProfileResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_modules_profile_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse'
         "403":
           description: Profile belongs to another account
           schema:
-            $ref: '#/definitions/internal_modules_profile_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/internal_modules_profile_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Get a household profile
@@ -6973,30 +6973,30 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_modules_profile_api_http.updateHouseholdProfileRequest'
+          $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.updateHouseholdProfileRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_modules_profile_api_http.householdProfileResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.householdProfileResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_modules_profile_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_modules_profile_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_modules_profile_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/internal_modules_profile_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Update a household profile
@@ -7021,15 +7021,15 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_modules_profile_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_modules_profile_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/internal_modules_profile_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Set default profile
@@ -7050,7 +7050,7 @@ paths:
         in: body
         name: body
         schema:
-          $ref: '#/definitions/internal_modules_profile_api_http.switchHouseholdProfileRequest'
+          $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.switchHouseholdProfileRequest'
       produces:
       - application/json
       responses:
@@ -7062,15 +7062,15 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_modules_profile_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse'
         "403":
           description: Wrong PIN or not your profile
           schema:
-            $ref: '#/definitions/internal_modules_profile_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/internal_modules_profile_api_http.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse'
       security:
       - BearerAuth: []
       summary: Switch active profile
@@ -7090,7 +7090,7 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_modules_user_api.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse'
       security:
       - BearerAuth: []
       summary: List active sessions
@@ -7111,11 +7111,11 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_modules_user_api.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/internal_modules_user_api.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse'
       security:
       - BearerAuth: []
       summary: Revoke a session
@@ -7132,18 +7132,18 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_modules_user_api.refreshRequest'
+          $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.refreshRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_modules_user_api.tokenResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.tokenResponse'
         "401":
           description: Token invalid or expired
           schema:
-            $ref: '#/definitions/internal_modules_user_api.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse'
       summary: Refresh tokens
       tags:
       - Auth
@@ -7158,22 +7158,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_modules_user_api.registerRequest'
+          $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.registerRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_modules_user_api.authResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.authResponse'
         "400":
           description: Validation error
           schema:
-            $ref: '#/definitions/internal_modules_user_api.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse'
         "409":
           description: Email already registered
           schema:
-            $ref: '#/definitions/internal_modules_user_api.errorResponse'
+            $ref: '#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse'
       summary: Register a new account
       tags:
       - Auth

@@ -713,7 +713,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_social_api_http.createChallengeRequest"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.createChallengeRequest"
                         }
                     }
                 ],
@@ -721,19 +721,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_social_api_http.challengeResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.challengeResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_social_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_social_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse"
                         }
                     }
                 }
@@ -767,13 +767,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Deadline passed",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_social_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_social_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse"
                         }
                     }
                 }
@@ -816,7 +816,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_social_api_http.leaderboardResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.leaderboardResponse"
                         }
                     }
                 }
@@ -857,13 +857,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_social_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse"
                         }
                     },
                     "404": {
                         "description": "Not a participant",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_social_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse"
                         }
                     }
                 }
@@ -945,13 +945,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.assetListResponse"
+                            "$ref": "#/definitions/internal_modules_upload_api_http.assetListResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_upload_api_http.errorResponse"
                         }
                     }
                 }
@@ -985,13 +985,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.assetResponse"
+                            "$ref": "#/definitions/internal_modules_upload_api_http.assetResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_upload_api_http.errorResponse"
                         }
                     }
                 }
@@ -1032,13 +1032,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_social_api_http.feedResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.feedResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_social_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse"
                         }
                     }
                 }
@@ -1375,13 +1375,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.moderationCaseListResponse"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.moderationCaseListResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.errorResponse"
                         }
                     }
                 }
@@ -1419,7 +1419,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.appealRequest"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.appealRequest"
                         }
                     }
                 ],
@@ -1427,25 +1427,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.appealResponse"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.appealResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.errorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.errorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.errorResponse"
                         }
                     }
                 }
@@ -1470,13 +1470,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.preferenceListResponse"
+                            "$ref": "#/definitions/internal_modules_notification_api_http.preferenceListResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_notification_api_http.errorResponse"
                         }
                     }
                 }
@@ -1502,7 +1502,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.bulkPreferenceRequest"
+                            "$ref": "#/definitions/internal_modules_notification_api_http.bulkPreferenceRequest"
                         }
                     }
                 ],
@@ -1513,13 +1513,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_notification_api_http.errorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_notification_api_http.errorResponse"
                         }
                     }
                 }
@@ -1567,13 +1567,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.notificationListResponse"
+                            "$ref": "#/definitions/internal_modules_notification_api_http.notificationListResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_notification_api_http.errorResponse"
                         }
                     }
                 }
@@ -1598,7 +1598,7 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_notification_api_http.errorResponse"
                         }
                     }
                 }
@@ -1632,7 +1632,7 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_notification_api_http.errorResponse"
                         }
                     }
                 }
@@ -1666,13 +1666,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_notification_api_http.errorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_notification_api_http.errorResponse"
                         }
                     }
                 }
@@ -1751,7 +1751,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.pushTokenRequest"
+                            "$ref": "#/definitions/internal_modules_notification_api_http.pushTokenRequest"
                         }
                     }
                 ],
@@ -1762,13 +1762,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_notification_api_http.errorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_notification_api_http.errorResponse"
                         }
                     }
                 }
@@ -1808,7 +1808,7 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_notification_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_notification_api_http.errorResponse"
                         }
                     }
                 }
@@ -2297,13 +2297,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.moderationCaseListResponse"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.moderationCaseListResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.errorResponse"
                         }
                     }
                 }
@@ -2337,13 +2337,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.caseResponse"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.caseResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.errorResponse"
                         }
                     }
                 }
@@ -2377,13 +2377,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.appealWrapperResponse"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.appealWrapperResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.errorResponse"
                         }
                     }
                 }
@@ -2421,7 +2421,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.decideAppealRequest"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.decideAppealRequest"
                         }
                     }
                 ],
@@ -2429,25 +2429,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.appealResponse"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.appealResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.errorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.errorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.errorResponse"
                         }
                     }
                 }
@@ -2484,7 +2484,7 @@ const docTemplate = `{
                         "name": "body",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.decideRequest"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.decideRequest"
                         }
                     }
                 ],
@@ -2492,19 +2492,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.caseResponse"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.caseResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.errorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.errorResponse"
                         }
                     }
                 }
@@ -2538,13 +2538,13 @@ const docTemplate = `{
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.errorResponse"
                         }
                     },
                     "409": {
                         "description": "Already locked",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.errorResponse"
                         }
                     }
                 }
@@ -2576,7 +2576,7 @@ const docTemplate = `{
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.errorResponse"
                         }
                     }
                 }
@@ -2613,7 +2613,7 @@ const docTemplate = `{
                         "name": "body",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.decideRequest"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.decideRequest"
                         }
                     }
                 ],
@@ -2621,19 +2621,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.caseResponse"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.caseResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.errorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_moderation_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_moderation_api_http.errorResponse"
                         }
                     }
                 }
@@ -2723,13 +2723,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.movieListResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.movieListResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.errorResponse"
                         }
                     }
                 }
@@ -2758,7 +2758,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.createMovieRequest"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.createMovieRequest"
                         }
                     }
                 ],
@@ -2766,31 +2766,31 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.movieResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.movieResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.errorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.errorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.errorResponse"
                         }
                     },
                     "409": {
                         "description": "Duplicate IMDb ID",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.errorResponse"
                         }
                     }
                 }
@@ -2810,7 +2810,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.genreListResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.genreListResponse"
                         }
                     }
                 }
@@ -2839,13 +2839,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.peopleListResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.peopleListResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.errorResponse"
                         }
                     }
                 }
@@ -2874,13 +2874,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.personResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.personResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.errorResponse"
                         }
                     }
                 }
@@ -2909,13 +2909,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.filmographyResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.filmographyResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.errorResponse"
                         }
                     }
                 }
@@ -2944,13 +2944,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.movieDetailResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.movieDetailResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.errorResponse"
                         }
                     }
                 }
@@ -2982,13 +2982,13 @@ const docTemplate = `{
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.errorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.errorResponse"
                         }
                     }
                 }
@@ -3024,7 +3024,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.updateMovieRequest"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.updateMovieRequest"
                         }
                     }
                 ],
@@ -3032,25 +3032,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.movieResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.movieResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.errorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.errorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.errorResponse"
                         }
                     }
                 }
@@ -3079,13 +3079,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.creditListResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.creditListResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.errorResponse"
                         }
                     }
                 }
@@ -3121,7 +3121,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.addCreditRequest"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.addCreditRequest"
                         }
                     }
                 ],
@@ -3129,25 +3129,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.creditResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.creditResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.errorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.errorResponse"
                         }
                     },
                     "404": {
                         "description": "Movie or person not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.errorResponse"
                         }
                     }
                 }
@@ -3188,13 +3188,13 @@ const docTemplate = `{
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.errorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.errorResponse"
                         }
                     }
                 }
@@ -3229,13 +3229,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.streamingLinkListResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.streamingLinkListResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.errorResponse"
                         }
                     }
                 }
@@ -3271,7 +3271,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.upsertStreamingLinkRequest"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.upsertStreamingLinkRequest"
                         }
                     }
                 ],
@@ -3279,19 +3279,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.streamingLinkResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.streamingLinkResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.errorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_movie_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_movie_api_http.errorResponse"
                         }
                     }
                 }
@@ -3600,7 +3600,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.reviewListResponse"
+                            "$ref": "#/definitions/internal_modules_review_api_http.reviewListResponse"
                         }
                     }
                 }
@@ -3636,7 +3636,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.createReviewRequest"
+                            "$ref": "#/definitions/internal_modules_review_api_http.createReviewRequest"
                         }
                     }
                 ],
@@ -3644,25 +3644,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.reviewResponse"
+                            "$ref": "#/definitions/internal_modules_review_api_http.reviewResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_review_api_http.errorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_review_api_http.errorResponse"
                         }
                     },
                     "409": {
                         "description": "User already reviewed this movie",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_review_api_http.errorResponse"
                         }
                     }
                 }
@@ -3712,7 +3712,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_social_api_http.threadListResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.threadListResponse"
                         }
                     }
                 }
@@ -3748,7 +3748,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_social_api_http.createThreadRequest"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.createThreadRequest"
                         }
                     }
                 ],
@@ -3756,19 +3756,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_social_api_http.threadResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.threadResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_social_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_social_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse"
                         }
                     }
                 }
@@ -3802,7 +3802,7 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_social_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse"
                         }
                     }
                 }
@@ -3831,13 +3831,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.reviewResponse"
+                            "$ref": "#/definitions/internal_modules_review_api_http.reviewResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_review_api_http.errorResponse"
                         }
                     }
                 }
@@ -3869,13 +3869,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_review_api_http.errorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_review_api_http.errorResponse"
                         }
                     }
                 }
@@ -3911,7 +3911,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.updateReviewRequest"
+                            "$ref": "#/definitions/internal_modules_review_api_http.updateReviewRequest"
                         }
                     }
                 ],
@@ -3919,25 +3919,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.reviewResponse"
+                            "$ref": "#/definitions/internal_modules_review_api_http.reviewResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_review_api_http.errorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_review_api_http.errorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_review_api_http.errorResponse"
                         }
                     }
                 }
@@ -3972,7 +3972,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.reactRequest"
+                            "$ref": "#/definitions/internal_modules_review_api_http.reactRequest"
                         }
                     }
                 ],
@@ -3983,13 +3983,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_review_api_http.errorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_review_api_http.errorResponse"
                         }
                     }
                 }
@@ -4021,7 +4021,7 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_review_api_http.errorResponse"
                         }
                     }
                 }
@@ -4056,7 +4056,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.reportRequest"
+                            "$ref": "#/definitions/internal_modules_review_api_http.reportRequest"
                         }
                     }
                 ],
@@ -4067,19 +4067,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_review_api_http.errorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_review_api_http.errorResponse"
                         }
                     },
                     "409": {
                         "description": "Already reported",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_review_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_review_api_http.errorResponse"
                         }
                     }
                 }
@@ -4122,13 +4122,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_social_api_http.postListResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.postListResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_social_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse"
                         }
                     }
                 }
@@ -4164,7 +4164,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_social_api_http.createPostRequest"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.createPostRequest"
                         }
                     }
                 ],
@@ -4172,19 +4172,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_social_api_http.postResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.postResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_social_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_social_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse"
                         }
                     }
                 }
@@ -4215,7 +4215,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.initiateRequest"
+                            "$ref": "#/definitions/internal_modules_upload_api_http.initiateRequest"
                         }
                     }
                 ],
@@ -4223,19 +4223,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.initiateResponse"
+                            "$ref": "#/definitions/internal_modules_upload_api_http.initiateResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_upload_api_http.errorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_upload_api_http.errorResponse"
                         }
                     }
                 }
@@ -4269,13 +4269,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.progressResponse"
+                            "$ref": "#/definitions/internal_modules_upload_api_http.progressResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_upload_api_http.errorResponse"
                         }
                     }
                 }
@@ -4307,7 +4307,7 @@ const docTemplate = `{
                         "name": "body",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.abortRequest"
+                            "$ref": "#/definitions/internal_modules_upload_api_http.abortRequest"
                         }
                     }
                 ],
@@ -4318,13 +4318,13 @@ const docTemplate = `{
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_upload_api_http.errorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_upload_api_http.errorResponse"
                         }
                     }
                 }
@@ -4358,19 +4358,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.completeResponse"
+                            "$ref": "#/definitions/internal_modules_upload_api_http.completeResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_upload_api_http.errorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_upload_api_http.errorResponse"
+                            "$ref": "#/definitions/internal_modules_upload_api_http.errorResponse"
                         }
                     }
                 }
@@ -4396,7 +4396,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.loginRequest"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.loginRequest"
                         }
                     }
                 ],
@@ -4404,19 +4404,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.authResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.authResponse"
                         }
                     },
                     "401": {
                         "description": "Invalid credentials",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse"
                         }
                     },
                     "403": {
                         "description": "Account locked or suspended",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse"
                         }
                     }
                 }
@@ -4441,7 +4441,7 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse"
                         }
                     }
                 }
@@ -4466,7 +4466,7 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse"
                         }
                     }
                 }
@@ -4491,13 +4491,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.userResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.userResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse"
                         }
                     }
                 }
@@ -4520,7 +4520,7 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse"
                         }
                     }
                 }
@@ -4545,13 +4545,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.profileResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.profileResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse"
                         }
                     }
                 }
@@ -4580,7 +4580,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.updateProfileRequest"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.updateProfileRequest"
                         }
                     }
                 ],
@@ -4588,19 +4588,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.profileResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.profileResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse"
                         }
                     }
                 }
@@ -4628,13 +4628,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse"
                         }
                     },
                     "401": {
                         "description": "Wrong old password",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse"
                         }
                     }
                 }
@@ -4659,13 +4659,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.preferencesResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.preferencesResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse"
                         }
                     }
                 }
@@ -4694,7 +4694,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.updatePreferencesRequest"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.updatePreferencesRequest"
                         }
                     }
                 ],
@@ -4702,19 +4702,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.preferencesResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.preferencesResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse"
                         }
                     }
                 }
@@ -4743,7 +4743,7 @@ const docTemplate = `{
                             "additionalProperties": {
                                 "type": "array",
                                 "items": {
-                                    "$ref": "#/definitions/internal_modules_profile_api_http.householdProfileResponse"
+                                    "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.householdProfileResponse"
                                 }
                             }
                         }
@@ -4751,7 +4751,7 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_profile_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse"
                         }
                     }
                 }
@@ -4780,7 +4780,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_profile_api_http.createHouseholdProfileRequest"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.createHouseholdProfileRequest"
                         }
                     }
                 ],
@@ -4788,25 +4788,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_profile_api_http.householdProfileResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.householdProfileResponse"
                         }
                     },
                     "400": {
                         "description": "Validation error",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_profile_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_profile_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse"
                         }
                     },
                     "409": {
                         "description": "Profile limit reached",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_profile_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse"
                         }
                     }
                 }
@@ -4840,25 +4840,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_profile_api_http.householdProfileResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.householdProfileResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_profile_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse"
                         }
                     },
                     "403": {
                         "description": "Profile belongs to another account",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_profile_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_profile_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse"
                         }
                     }
                 }
@@ -4890,25 +4890,25 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_profile_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_profile_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_profile_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse"
                         }
                     },
                     "409": {
                         "description": "Last profile or default profile",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_profile_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse"
                         }
                     }
                 }
@@ -4944,7 +4944,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_profile_api_http.updateHouseholdProfileRequest"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.updateHouseholdProfileRequest"
                         }
                     }
                 ],
@@ -4952,31 +4952,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_profile_api_http.householdProfileResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.householdProfileResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_profile_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_profile_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_profile_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_profile_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse"
                         }
                     }
                 }
@@ -5016,19 +5016,19 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_profile_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_profile_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_profile_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse"
                         }
                     }
                 }
@@ -5065,7 +5065,7 @@ const docTemplate = `{
                         "name": "body",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_profile_api_http.switchHouseholdProfileRequest"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.switchHouseholdProfileRequest"
                         }
                     }
                 ],
@@ -5080,19 +5080,19 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_profile_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse"
                         }
                     },
                     "403": {
                         "description": "Wrong PIN or not your profile",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_profile_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_profile_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_profile_api_http.errorResponse"
                         }
                     }
                 }
@@ -5124,7 +5124,7 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse"
                         }
                     }
                 }
@@ -5158,13 +5158,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse"
                         }
                     }
                 }
@@ -5190,7 +5190,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.refreshRequest"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.refreshRequest"
                         }
                     }
                 ],
@@ -5198,13 +5198,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.tokenResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.tokenResponse"
                         }
                     },
                     "401": {
                         "description": "Token invalid or expired",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse"
                         }
                     }
                 }
@@ -5230,7 +5230,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.registerRequest"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.registerRequest"
                         }
                     }
                 ],
@@ -5238,19 +5238,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.authResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.authResponse"
                         }
                     },
                     "400": {
                         "description": "Validation error",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse"
                         }
                     },
                     "409": {
                         "description": "Email already registered",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_user_api.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_user_api.errorResponse"
                         }
                     }
                 }
@@ -5293,7 +5293,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_social_api_http.feedResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.feedResponse"
                         }
                     }
                 }
@@ -5327,13 +5327,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Cannot follow yourself",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_social_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_social_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse"
                         }
                     }
                 }
@@ -5365,7 +5365,7 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_modules_social_api_http.errorResponse"
+                            "$ref": "#/definitions/github_com_Ab-dex_view-aura_internal_modules_social_api_http.errorResponse"
                         }
                     }
                 }
