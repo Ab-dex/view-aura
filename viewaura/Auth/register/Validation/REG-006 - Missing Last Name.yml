@@ -1,0 +1,38 @@
+info:
+  name: Register - Missing Last Name
+  type: http
+  seq: 6
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/auth/register"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "david.solemn@gmail.com",
+        "password": "Password1@",
+        "display_name": "Solemnseagal",
+        "first_name": "David",
+        "user_name": "solemn_dev"
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        expect(res.status).to.equal(400);
+        expect(res.body.message).to.include("last_name");
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Test ID: REG-006
+  Category: Negative
+  Description: Failed registration with last_name field absent
+  Expected: 400 Bad Request, error references "last_name"

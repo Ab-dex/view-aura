@@ -1,0 +1,40 @@
+info:
+  name: Verify Email - Already Used Token
+  type: http
+  seq: 6
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/auth/verify-email"
+  body:
+    type: json
+    data: |-
+      {
+        "token": "{{validVerificationToken}}"
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("Check verify email fails on token replay", function() {
+          expect(res.status).to.equal(400);
+        });
+
+        test("Check response contains error message", function() {
+          expect(res.body).to.have.property("message");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Test ID: VER-006
+  Category: Negative
+  Description: Failed verification when the same token is submitted a second time after already being consumed by VER-001
+  Precondition: VER-001 has already run and consumed {{validVerificationToken}}
+  Expected: 400 Bad Request, token is no longer valid

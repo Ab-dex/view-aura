@@ -1,0 +1,53 @@
+info:
+  name: Register - Duplicate Email
+  type: http
+  seq: 16
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/auth/register"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "david.solemn@gmail.com",
+        "password": "Password1@",
+        "display_name": "AnotherUser",
+        "first_name": "Another",
+        "last_name": "User",
+        "user_name": "another_dev"
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("Check error object exists", function() {
+          expect(res.body).to.have.property("error");
+        });
+
+        test("Check error has code", function() {
+          expect(res.body.error).to.have.property("code");
+        });
+
+        test("Check error has message", function() {
+          expect(res.body.error).to.have.property("message");
+        });
+
+        test("Check error message mentions email", function() {
+          expect(res.body.error).to.have.property("message").that.includes("email");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Test ID: REG-016
+  Category: Negative
+  Description: Failed registration using an email address already taken by an existing account
+  Precondition: An account with email "david.solemn@gmail.com" already exists (e.g. seeded by REG-001)
+  Expected: 409 Conflict, error references "email"

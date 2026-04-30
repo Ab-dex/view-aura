@@ -1,0 +1,40 @@
+info:
+  name: Verify Email - Expired Token
+  type: http
+  seq: 5
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/auth/verify-email"
+  body:
+    type: json
+    data: |-
+      {
+        "token": "{{expiredVerificationToken}}"
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("Check verify email fails with expired token", function() {
+          expect(res.status).to.equal(400);
+        });
+
+        test("Check error message indicates expiry", function() {
+          expect(res.body.message).to.include("expired");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Test ID: VER-005
+  Category: Negative
+  Description: Failed verification with a token that has passed its TTL
+  Precondition: {{expiredVerificationToken}} holds a token issued beyond the expiry window
+  Expected: 400 Bad Request, error references "expired"

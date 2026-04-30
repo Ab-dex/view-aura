@@ -85,7 +85,7 @@ type TokenPair struct {
 type VerificationPurpose string
 
 const (
-	PurposeEmailVerify   VerificationPurpose = "email_verify"
+	PurposeEmailVerify   VerificationPurpose = "email_verification"
 	PurposePasswordReset VerificationPurpose = "password_reset"
 	PurposeMFAEmailOTP   VerificationPurpose = "mfa_email_otp"
 	PurposeMagicLink     VerificationPurpose = "magic_link"
@@ -120,7 +120,7 @@ type VerificationToken struct {
 	ExpiresAt  time.Time
 	RedeemedAt *time.Time
 	CreatedAt  time.Time
-	IPAddress  string
+	IPAddress  *string
 	UserAgent  string
 }
 
@@ -201,10 +201,8 @@ type OAuthUserInfo struct {
 type RegisterCmd struct {
 	Email       string
 	Password    string
-	FirstName   string
-	LastName    string
-	OtherNames  *string
 	DisplayName string
+	UserName    string
 	Locale      string
 	Country     string
 }
@@ -227,6 +225,7 @@ type SendVerificationEmailCmd struct {
 
 type VerifyEmailCmd struct {
 	Token     string
+	UserID    *string
 	IPAddress string
 }
 

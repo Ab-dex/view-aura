@@ -211,6 +211,7 @@ func (s *authService) Register(ctx context.Context, cmd domain.RegisterCmd) (*us
 		ID:          userdomain.UserID(uuid.New().String()),
 		Email:       strings.ToLower(strings.TrimSpace(cmd.Email)),
 		DisplayName: cmd.DisplayName,
+		UserName:    cmd.UserName,
 		Role:        userdomain.RoleUser,
 		Status:      userdomain.StatusPending,
 		Locale:      orDefault(cmd.Locale, "en"),
@@ -268,7 +269,6 @@ func (s *authService) Register(ctx context.Context, cmd domain.RegisterCmd) (*us
 	}
 
 	// ── After commit — safe side effects ──────────────────────────────────────
-
 	pair, err := s.tokens.Issue(ctx, created)
 	if err != nil {
 		return nil, nil, err
@@ -277,7 +277,7 @@ func (s *authService) Register(ctx context.Context, cmd domain.RegisterCmd) (*us
 	// Generate the verification token now so the fallback publisher can embed
 	// it in the email when Kafka is unavailable.  The token is also stored in
 	// the DB so VerifyEmail works regardless of which delivery path was used.
-	rawToken := generateSecureToken(32)
+	rawToken := generateNumericOTP(6)
 	_ = s.verifyTokens.DeleteAllForUser(ctx, created.ID.String(), domain.PurposeEmailVerify)
 	_ = s.verifyTokens.Create(ctx, &domain.VerificationToken{
 		ID:        uuid.New().String(),
@@ -287,6 +287,7 @@ func (s *authService) Register(ctx context.Context, cmd domain.RegisterCmd) (*us
 		ExpiresAt: time.Now().Add(domain.TTL(domain.PurposeEmailVerify)),
 		CreatedAt: time.Now(),
 	})
+	log.Info().Str("user_token", rawToken).Msg("user token for testing")
 
 	// Publish via the fallback publisher: Kafka → direct email (in that order).
 	rp := &registrationPublisher{
@@ -455,7 +456,7 @@ func (s *authService) SendVerificationEmail(ctx context.Context, cmd domain.Send
 		TokenHash: hashToken(rawToken),
 		ExpiresAt: time.Now().Add(domain.TTL(domain.PurposeEmailVerify)),
 		CreatedAt: time.Now(),
-		IPAddress: cmd.IPAddress,
+		IPAddress: &cmd.IPAddress,
 		UserAgent: cmd.UserAgent,
 	}); err != nil {
 		return fmt.Errorf("auth: store verification token: %w", err)
@@ -470,7 +471,7 @@ func (s *authService) SendVerificationEmail(ctx context.Context, cmd domain.Send
 }
 
 func (s *authService) VerifyEmail(ctx context.Context, cmd domain.VerifyEmailCmd) error {
-	record, err := s.verifyTokens.GetByHash(ctx, hashToken(cmd.Token))
+	record, err := s.verifyTokens.GetByHash(ctx, hashToken(cmd.Token), nil, nil)
 	if err != nil {
 		return err
 	}
@@ -515,7 +516,7 @@ func (s *authService) SendPasswordReset(ctx context.Context, cmd domain.SendPass
 		TokenHash: hashToken(rawToken),
 		ExpiresAt: time.Now().Add(domain.TTL(domain.PurposePasswordReset)),
 		CreatedAt: time.Now(),
-		IPAddress: cmd.IPAddress,
+		IPAddress: &cmd.IPAddress,
 		UserAgent: cmd.UserAgent,
 	}); err != nil {
 		return fmt.Errorf("auth: store reset token: %w", err)
@@ -529,7 +530,7 @@ func (s *authService) SendPasswordReset(ctx context.Context, cmd domain.SendPass
 }
 
 func (s *authService) ResetPassword(ctx context.Context, cmd domain.ResetPasswordCmd) (*userdomain.User, *domain.TokenPair, error) {
-	record, err := s.verifyTokens.GetByHash(ctx, hashToken(cmd.Token))
+	record, err := s.verifyTokens.GetByHash(ctx, hashToken(cmd.Token), nil, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -759,7 +760,7 @@ func (s *authService) VerifyMFA(ctx context.Context, cmd domain.VerifyMFACmd) (*
 			}
 		}
 	case domain.MFAMethodEmail:
-		record, err := s.verifyTokens.GetByHash(ctx, hashToken(cmd.Code))
+		record, err := s.verifyTokens.GetByHash(ctx, hashToken(cmd.Code), nil, nil)
 		if err != nil || !record.IsUsable() || record.UserID != cmd.UserID {
 			return nil, nil, apierror.New(401, "MFA_CODE_INVALID", "OTP is invalid or expired")
 		}
@@ -923,12 +924,10 @@ func validateRegister(cmd domain.RegisterCmd) error {
 		errs = append(errs, fieldErr{"display_name", "must be at least 2 characters"})
 	}
 
-	if len(strings.TrimSpace(cmd.FirstName)) < 2 {
-		errs = append(errs, fieldErr{"first_name", "must be at least 2 characters"})
+	if len(strings.TrimSpace(cmd.UserName)) < 2 {
+		errs = append(errs, fieldErr{"user_name", "must be at least 2 characters"})
 	}
-	if len(strings.TrimSpace(cmd.LastName)) < 2 {
-		errs = append(errs, fieldErr{"last_name", "must be at least 2 characters"})
-	}
+
 	if len(errs) > 0 {
 		return apierror.Validation("registration input is invalid", errs)
 	}

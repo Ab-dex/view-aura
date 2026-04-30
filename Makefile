@@ -197,7 +197,8 @@ migrate-up:
 	        -database "$(DB_DSN)" up
 	@echo "✓ migrations applied"
 
-## migrate-down: Roll back migrations -ll, 1, 2, etc default 1.
+## migrate-down: Roll back migrations -all, 1, 2, etc default 1.
+# Example Usage: make migrate-down -- -all
 migrate-down:
 	@if [ "$(filter -all,$(MAKECMDGOALS))" ]; then \
 		migrate -path infrastructure/postgres/migrations \

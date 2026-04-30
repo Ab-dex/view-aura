@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -74,8 +75,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		Email       string `json:"email"        binding:"required,email"`
 		Password    string `json:"password"     binding:"required,min=8"`
 		DisplayName string `json:"display_name" binding:"required,min=2"`
-		FirstName   string `json:"first_name" binding:"required,min=2"`
-		LastName    string `json:"last_name" binding:"required,min=2"`
+		UserName    string `json:"user_name" binding:"required,min=2"`
 		OtherNames  string `json:"other_names"`
 		Locale      string `json:"locale"`
 		Country     string `json:"country"`
@@ -88,9 +88,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		Email:       req.Email,
 		Password:    req.Password,
 		DisplayName: req.DisplayName,
-		FirstName:   req.FirstName,
-		LastName:    req.LastName,
-		OtherNames:  &req.OtherNames,
+		UserName:    req.UserName,
 		Locale:      req.Locale,
 		Country:     req.Country,
 	})
@@ -224,19 +222,41 @@ func (h *AuthHandler) SendVerificationEmail(c *gin.Context) {
 
 func (h *AuthHandler) VerifyEmail(c *gin.Context) {
 	var req struct {
-		Token string `json:"token" binding:"required"`
+		Token  string  `json:"token" binding:"required"`
+		UserID *string `json:"user_id"`
 	}
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respondError(c, apierror.Validation("token is required", nil))
 		return
 	}
-	if err := h.svc.VerifyEmail(c.Request.Context(), authdomain.VerifyEmailCmd{
+
+	// Try to get userID from auth context first (if logged in)
+	var userID *string
+
+	if uid, exists := c.Get("user_id"); exists {
+		if uidStr, ok := uid.(string); ok {
+			userID = &uidStr
+		}
+	}
+	fmt.Printf("user id: %v", userID)
+
+	// fallback to request body if not authenticated
+	if userID == nil {
+		userID = req.UserID
+	}
+
+	cmd := authdomain.VerifyEmailCmd{
 		Token:     req.Token,
+		UserID:    userID,
 		IPAddress: c.ClientIP(),
-	}); err != nil {
+	}
+
+	if err := h.svc.VerifyEmail(c.Request.Context(), cmd); err != nil {
 		respondError(c, err)
 		return
 	}
+
 	c.Status(http.StatusNoContent)
 }
 
@@ -478,9 +498,9 @@ func (h *AuthHandler) RevokeSession(c *gin.Context) {
 // ─── Response types ───────────────────────────────────────────────────────────
 
 type authResponse struct {
-	AccessToken  string      `json:"access_token"`
-	RefreshToken string      `json:"refresh_token"`
-	ExpiresIn    int64       `json:"expires_in"`
+	AccessToken  *string     `json:"access_token,omitempty"`
+	RefreshToken *string     `json:"refresh_token,omitempty"`
+	ExpiresIn    *int64      `json:"expires_in,omitempty"`
 	User         userSummary `json:"user"`
 }
 
@@ -496,10 +516,20 @@ type userSummary struct {
 // newAuthResponse builds the auth response from the service return values.
 // user is *userdomain.User; pair is *authdomain.TokenPair.
 func newAuthResponse(user *userdomain.User, pair *authdomain.TokenPair) authResponse {
+	var accessToken *string
+	var refreshToken *string
+	var expiresIn *int64
+
+	if pair != nil {
+		accessToken = &pair.AccessToken
+		refreshToken = &pair.RefreshToken
+		expiresIn = &pair.ExpiresIn
+	}
+
 	return authResponse{
-		AccessToken:  pair.AccessToken,
-		RefreshToken: pair.RefreshToken,
-		ExpiresIn:    pair.ExpiresIn,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		ExpiresIn:    expiresIn,
 		User: userSummary{
 			ID:            user.ID.String(),
 			Email:         user.Email,

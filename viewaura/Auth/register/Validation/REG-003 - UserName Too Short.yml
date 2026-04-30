@@ -1,0 +1,39 @@
+info:
+  name: Register - Username Too Short
+  type: http
+  seq: 13
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/auth/register"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "david.solemn@gmail.com",
+        "password": "Password1@",
+        "display_name": "Solemnseagal",
+        "first_name": "David",
+        "last_name": "Solemn",
+        "user_name": "s"
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        expect(res.status).to.equal(400);
+        expect(res.body.message).to.include("user_name");
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Test ID: REG-003
+  Category: Negative
+  Description: Failed registration with user_name under 2 characters (binding: min=2)
+  Expected: 400 Bad Request, error references "user_name"

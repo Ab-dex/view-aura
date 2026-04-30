@@ -256,7 +256,7 @@ func toUserResponse(u *domain.User) userResponse {
 		ID:            u.ID.String(),
 		Email:         u.Email,
 		EmailVerified: u.EmailVerified,
-		Username:      u.Username,
+		Username:      u.UserName,
 		DisplayName:   u.DisplayName,
 		Role:          string(u.Role),
 		Status:        string(u.Status),

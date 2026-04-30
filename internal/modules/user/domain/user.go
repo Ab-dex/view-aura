@@ -45,7 +45,7 @@ type User struct {
 	ID            UserID
 	Email         string
 	EmailVerified bool
-	Username      string
+	UserName      string
 	FirstName     string
 	LastName      string
 	OtherNames    *string

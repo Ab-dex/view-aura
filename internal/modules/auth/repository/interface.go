@@ -97,7 +97,7 @@ type VerificationTokenRepository interface {
 
 	// GetByHash retrieves the token whose token_hash matches SHA-256(plaintext).
 	// Returns apierror.ErrTokenInvalid when no matching row exists.
-	GetByHash(ctx context.Context, hash string) (*domain.VerificationToken, error)
+	GetByHash(ctx context.Context, hash string, user_id, purpose *string) (*domain.VerificationToken, error)
 
 	// MarkRedeemed sets redeemed_at = NOW() atomically.
 	MarkRedeemed(ctx context.Context, id string) error

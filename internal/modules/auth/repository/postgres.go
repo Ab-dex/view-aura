@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -35,26 +36,64 @@ func NewVerificationTokenRepository(pool *pgxpool.Pool) VerificationTokenReposit
 const tokenCols = `id, user_id, purpose, token_hash, expires_at, redeemed_at, created_at, ip_address, user_agent`
 
 func (r *pgVerificationTokenRepo) Create(ctx context.Context, t *domain.VerificationToken) error {
-	const q = `
+	const revoke = `
+		UPDATE auth_verification_tokens
+		SET    revoked_at = NOW(),
+		       updated_at = NOW()
+		WHERE  user_id    = $1
+		  AND  purpose    = $2
+		  AND  used_at    IS NULL
+		  AND  revoked_at IS NULL
+		  AND  expires_at > NOW()`
+
+	const insert = `
 		INSERT INTO auth_verification_tokens
-			(id, user_id, purpose, token_hash, expires_at, ip_address, user_agent, created_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,NOW())`
-	_, err := r.pool.Exec(ctx, q,
+			(id, user_id, purpose, token_hash, expires_at, ip_address, user_agent, created_at, updated_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,NOW(),NOW())`
+
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("auth: create verification token: begin tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	if _, err = tx.Exec(ctx, revoke, t.UserID, string(t.Purpose)); err != nil {
+		return fmt.Errorf("auth: create verification token: revoke previous: %w", err)
+	}
+
+	if _, err = tx.Exec(ctx, insert,
 		t.ID, t.UserID, string(t.Purpose), t.TokenHash,
 		t.ExpiresAt, t.IPAddress, t.UserAgent,
-	)
-	if err != nil {
-		return fmt.Errorf("auth: create verification token: %w", err)
+	); err != nil {
+		return fmt.Errorf("auth: create verification token: insert: %w", err)
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return fmt.Errorf("auth: create verification token: commit: %w", err)
 	}
 	return nil
 }
 
-func (r *pgVerificationTokenRepo) GetByHash(ctx context.Context, hash string) (*domain.VerificationToken, error) {
-	const q = `SELECT ` + tokenCols + `
-		FROM auth_verification_tokens
-		WHERE token_hash = $1
-		LIMIT 1`
-	row := r.pool.QueryRow(ctx, q, hash)
+func (r *pgVerificationTokenRepo) GetByHash(ctx context.Context, hash string, user_id, purpose *string) (*domain.VerificationToken, error) {
+	baseQuery := `SELECT ` + tokenCols + ` FROM auth_verification_tokens WHERE token_hash = $1`
+	args := []any{hash}
+	argPos := 2
+
+	if purpose != nil {
+		baseQuery += ` AND user_id = $` + strconv.Itoa(argPos)
+		args = append(args, *purpose)
+		argPos++
+	}
+
+	if purpose != nil {
+		baseQuery += ` AND purpose = $` + strconv.Itoa(argPos)
+		args = append(args, *purpose)
+		argPos++
+	}
+
+	baseQuery += ` AND redeemed_at IS NULL AND expires_at > NOW() LIMIT 1`
+
+	row := r.pool.QueryRow(ctx, baseQuery, args...)
 	return scanToken(row)
 }
 

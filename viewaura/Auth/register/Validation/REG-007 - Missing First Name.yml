@@ -1,0 +1,38 @@
+info:
+  name: Register - Missing First Name
+  type: http
+  seq: 5
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/auth/register"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "david.solemn@gmail.com",
+        "password": "Password1@",
+        "display_name": "Solemnseagal",
+        "last_name": "Solemn",
+        "user_name": "solemn_dev"
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        expect(res.status).to.equal(400);
+        expect(res.body.message).to.include("first_name");
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Test ID: REG-007
+  Category: Negative
+  Description: Failed registration with first_name field absent
+  Expected: 400 Bad Request, error references "first_name"

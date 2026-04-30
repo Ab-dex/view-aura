@@ -1,0 +1,6 @@
+info:
+  name: verify-email
+  type: folder
+  seq: 1
+
+request: {}

@@ -56,7 +56,7 @@ func (r *pgUserRepository) Create(ctx context.Context, u *domain.User) (*domain.
 		u.ID,
 		u.Email,
 		u.EmailVerified,
-		u.Username,
+		u.UserName,
 		u.DisplayName,
 		u.Role,
 		u.Status,
@@ -211,7 +211,7 @@ func (r *pgUserRepository) Update(ctx context.Context, u *domain.User) (*domain.
 		          is_deleted, deleted_at, created_at, updated_at`
 
 	row := r.conn(ctx).QueryRow(ctx, q,
-		u.ID, u.Email, u.EmailVerified, u.Username, u.DisplayName,
+		u.ID, u.Email, u.EmailVerified, u.UserName, u.DisplayName,
 		u.Role, u.Status, u.Locale, u.Timezone, u.Country,
 	)
 	result, err := scanUser(row)
@@ -362,7 +362,7 @@ func scanUser(row rowScanner) (*domain.User, error) {
 		&u.ID,
 		&u.Email,
 		&u.EmailVerified,
-		&u.Username,
+		&u.UserName,
 		&u.DisplayName,
 		&u.Role,
 		&u.Status,

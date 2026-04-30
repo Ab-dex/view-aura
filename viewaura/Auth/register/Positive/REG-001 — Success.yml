@@ -1,0 +1,56 @@
+info:
+  name: Register - Success
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/auth/register"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "david.solemn1ew@gmail.com",
+        "password": "Password1@",
+        "display_name": "Solemnseagal1",
+        "user_name": "solemn_dever",
+        "locale": "en",
+        "country": "NG"
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("Check register succeeds with all valid fields", function() {
+          expect(res.status).to.equal(201);
+        });
+
+        test("Check register succeeds with user property in response", function() {
+          expect(res.body).to.have.property("user");
+        });
+
+        test("Check user property does not have password field in response", function() {
+          expect(res.body.user).to.not.have.property("password");
+        });
+
+        test("Check register succeeds and returns email_verified false", function() {
+          expect(res.body.user).to.have.property("email_verified", false);
+        });
+
+        test("Check response contains access_token", function() {
+          expect(res.body).to.have.property("access_token");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Test ID: REG-001
+  Category: Positive
+  Description: Successful registration with all required and optional fields
+  Expected: 201 Created, returns user data

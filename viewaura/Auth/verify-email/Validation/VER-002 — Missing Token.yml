@@ -1,0 +1,37 @@
+info:
+  name: Verify Email - Missing Token
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/auth/verify-email"
+  body:
+    type: json
+    data: |-
+      {}
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("Check verify email fails with missing token", function() {
+          expect(res.status).to.equal(400);
+        });
+
+        test("Check error message references token field", function() {
+          expect(res.body.message).to.include("token");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Test ID: VER-002
+  Category: Negative
+  Description: Failed verification with token field absent from body
+  Expected: 400 Bad Request, error references "token"
